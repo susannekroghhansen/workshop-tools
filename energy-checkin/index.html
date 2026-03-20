@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Energy Check-In</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f7f5f2;
+      color: #3a3530;
+      min-height: 100vh;
+    }
+
+    .view {
+      display: none;
+      flex-direction: column;
+      min-height: 100vh;
+      padding: 2rem 1.25rem 1rem;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .view.active {
+      display: flex;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .header h1 {
+      font-size: 1.55rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .header p {
+      margin-top: 0.35rem;
+      font-size: 0.9rem;
+      color: #9a9088;
+    }
+
+    /* ── Participant: energy buttons ── */
+    .energy-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .energy-btn {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.1rem 1.4rem;
+      border: none;
+      border-radius: 18px;
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    .energy-btn:active {
+      transform: scale(0.97);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .energy-btn .num {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      min-width: 2.2rem;
+      text-align: center;
+    }
+
+    .energy-btn .label {
+      font-size: 0.95rem;
+      font-weight: 500;
+      opacity: 0.82;
+    }
+
+    .e5 { background: #fad5d5; color: #7a1f1f; }
+    .e4 { background: #fde3c4; color: #7a3a00; }
+    .e3 { background: #fdf0c5; color: #6a5000; }
+    .e2 { background: #d4ecdf; color: #225c3c; }
+    .e1 { background: #dde8f5; color: #1f3f6a; }
+
+    /* ── Participant: confirmation ── */
+    .thankyou {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      text-align: center;
+      gap: 0.75rem;
+    }
+
+    .thankyou.show {
+      display: flex;
+    }
+
+    .check-circle {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #d4ecdf;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      color: #225c3c;
+      margin-bottom: 0.5rem;
+    }
+
+    .thankyou h2 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #3a3530;
+    }
+
+    .thankyou p {
+      color: #9a9088;
+      font-size: 0.9rem;
+    }
+
+    /* ── Facilitator: average card ── */
+    .avg-card {
+      background: white;
+      border-radius: 20px;
+      padding: 1.4rem 1.5rem;
+      text-align: center;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 2px 14px rgba(0,0,0,0.06);
+    }
+
+    .avg-card .avg-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: #9a9088;
+      margin-bottom: 0.2rem;
+    }
+
+    .avg-card .avg-num {
+      font-size: 4.5rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      color: #3a3530;
+    }
+
+    .avg-card .avg-meta {
+      margin-top: 0.3rem;
+      font-size: 0.85rem;
+      color: #9a9088;
+    }
+
+    /* ── Facilitator: bars ── */
+    .bars {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .bar-num {
+      font-size: 0.95rem;
+      font-weight: 600;
+      min-width: 1.1rem;
+      text-align: center;
+      color: #5a5048;
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 2.6rem;
+      background: #eeebe7;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 12px;
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .bf5 { background: #f5b8b8; }
+    .bf4 { background: #f9cfa4; }
+    .bf3 { background: #f5de8a; }
+    .bf2 { background: #9ed4b4; }
+    .bf1 { background: #b0ccec; }
+
+    .bar-count {
+      font-size: 0.85rem;
+      color: #9a9088;
+      min-width: 1.8rem;
+      text-align: right;
+    }
+
+    /* ── Shared: footer / toggle ── */
+    .footer {
+      padding-top: 1.25rem;
+      text-align: center;
+    }
+
+    .toggle-btn {
+      background: none;
+      border: none;
+      color: #b0a89e;
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+    }
+
+    .toggle-btn:hover {
+      color: #7a7068;
+    }
+
+    /* ── Facilitator: clear button ── */
+    .clear-btn {
+      background: none;
+      border: 1.5px solid #e4dfd8;
+      color: #9a9088;
+      font-size: 0.88rem;
+      cursor: pointer;
+      padding: 0.75rem;
+      border-radius: 14px;
+      width: 100%;
+      transition: background 0.15s;
+    }
+
+    .clear-btn:hover {
+      background: #f0ece7;
+    }
+
+    /* ── Empty state ── */
+    .empty {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #b0a89e;
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 2rem 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ────────────────── PARTICIPANT VIEW ────────────────── -->
+<div id="participant-view" class="view active">
+  <div class="header">
+    <h1>How's your energy?</h1>
+    <p>Tap a number to check in</p>
+  </div>
+
+  <div class="energy-grid" id="energy-grid">
+    <button class="energy-btn e5" onclick="submitRating(5)">
+      <span class="num">5</span>
+      <span class="label">Buzzing — full energy</span>
+    </button>
+    <button class="energy-btn e4" onclick="submitRating(4)">
+      <span class="num">4</span>
+      <span class="label">Good — feeling engaged</span>
+    </button>
+    <button class="energy-btn e3" onclick="submitRating(3)">
+      <span class="num">3</span>
+      <span class="label">Okay — steady, middle ground</span>
+    </button>
+    <button class="energy-btn e2" onclick="submitRating(2)">
+      <span class="num">2</span>
+      <span class="label">Low — a bit flat</span>
+    </button>
+    <button class="energy-btn e1" onclick="submitRating(1)">
+      <span class="num">1</span>
+      <span class="label">Empty — really tired</span>
+    </button>
+  </div>
+
+  <div class="thankyou" id="thankyou">
+    <div class="check-circle">✓</div>
+    <h2>Checked in!</h2>
+    <p>Pass the device to the next person</p>
+  </div>
+
+  <div class="footer">
+    <button class="toggle-btn" onclick="switchView('facilitator')">Facilitator view →</button>
+  </div>
+</div>
+
+<!-- ────────────────── FACILITATOR VIEW ────────────────── -->
+<div id="facilitator-view" class="view">
+  <div class="header">
+    <h1>Room Energy</h1>
+    <p id="total-label">No responses yet</p>
+  </div>
+
+  <div class="avg-card">
+    <div class="avg-label">Average</div>
+    <div class="avg-num" id="avg-display">—</div>
+    <div class="avg-meta">out of 5</div>
+  </div>
+
+  <div class="bars" id="bars"></div>
+  <div class="empty" id="empty-msg">Responses will appear here</div>
+
+  <button class="clear-btn" onclick="clearAll()">Clear all responses</button>
+
+  <div class="footer">
+    <button class="toggle-btn" onclick="switchView('participant')">← Participant view</button>
+  </div>
+</div>
+
+<script>
+  const KEY = 'workshop_energy_v1';
+
+  function getCounts() {
+    try {
+      const data = JSON.parse(localStorage.getItem(KEY));
+      if (data && typeof data === 'object') return data;
+    } catch (_) {}
+    return { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  }
+
+  function saveCounts(c) {
+    localStorage.setItem(KEY, JSON.stringify(c));
+  }
+
+  function submitRating(level) {
+    const counts = getCounts();
+    counts[level] = (counts[level] || 0) + 1;
+    saveCounts(counts);
+
+    const grid = document.getElementById('energy-grid');
+    const ty = document.getElementById('thankyou');
+    grid.style.display = 'none';
+    ty.classList.add('show');
+
+    setTimeout(() => {
+      ty.classList.remove('show');
+      grid.style.display = 'flex';
+    }, 2400);
+  }
+
+  function switchView(view) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(view + '-view').classList.add('active');
+    if (view === 'facilitator') renderFacilitator();
+  }
+
+  function renderFacilitator() {
+    const counts = getCounts();
+
+    let total = 0, sum = 0;
+    for (let i = 1; i <= 5; i++) {
+      total += counts[i];
+      sum += i * counts[i];
+    }
+
+    document.getElementById('total-label').textContent =
+      total === 0 ? 'No responses yet' :
+      total === 1 ? '1 response' : `${total} responses`;
+
+    document.getElementById('avg-display').textContent =
+      total === 0 ? '—' : (sum / total).toFixed(1);
+
+    const bars = document.getElementById('bars');
+    const emptyMsg = document.getElementById('empty-msg');
+
+    if (total === 0) {
+      bars.innerHTML = '';
+      bars.style.display = 'none';
+      emptyMsg.style.display = 'flex';
+      return;
+    }
+
+    bars.style.display = 'flex';
+    emptyMsg.style.display = 'none';
+
+    const maxCount = Math.max(...Object.values(counts), 1);
+    bars.innerHTML = '';
+
+    for (let i = 5; i >= 1; i--) {
+      const count = counts[i];
+      const pct = (count / maxCount) * 100;
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      row.innerHTML = `
+        <span class="bar-num">${i}</span>
+        <div class="bar-track">
+          <div class="bar-fill bf${i}" style="width: ${pct}%"></div>
+        </div>
+        <span class="bar-count">${count}</span>
+      `;
+      bars.appendChild(row);
+    }
+  }
+
+  function clearAll() {
+    if (!confirm('Clear all responses?')) return;
+    saveCounts({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
+    renderFacilitator();
+  }
+</script>
+</body>
+</html>
