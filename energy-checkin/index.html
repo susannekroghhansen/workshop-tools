@@ -23,7 +23,7 @@
       display: none;
       flex-direction: column;
       min-height: 100vh;
-      padding: 2rem 1.25rem 1rem;
+      padding: 2rem 1.25rem 5rem;
       max-width: 480px;
       margin: 0 auto;
     }
@@ -142,7 +142,7 @@
       border-radius: 20px;
       padding: 1.4rem 1.5rem;
       text-align: center;
-      margin-bottom: 1.25rem;
+      margin-bottom: 1.5rem;
       box-shadow: 0 2px 14px rgba(0,0,0,0.06);
     }
 
@@ -159,7 +159,7 @@
       font-weight: 700;
       letter-spacing: -0.04em;
       line-height: 1;
-      color: #2e3d38;
+      color: #5e9977;
     }
 
     .avg-card .avg-meta {
@@ -218,41 +218,69 @@
       text-align: right;
     }
 
-    /* ── Shared: footer / toggle ── */
-    .footer {
-      padding-top: 1.25rem;
-      text-align: center;
+    /* ── Nav bar ── */
+    nav {
+      background: #ffffff;
+      border-top: 1px solid #cdd9d5;
+      padding: 10px 16px;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
     }
 
     .toggle-btn {
-      background: none;
-      border: none;
+      padding: 9px 20px;
+      border: 1.5px solid #cdd9d5;
+      border-radius: 99px;
+      background: transparent;
       color: #7a9990;
-      font-size: 0.8rem;
+      font-size: 14px;
+      font-weight: 500;
       cursor: pointer;
-      padding: 0.4rem 0.8rem;
-      border-radius: 8px;
+      transition: all .15s;
+      font-family: inherit;
     }
 
     .toggle-btn:hover {
+      border-color: #5e9977;
       color: #2e3d38;
+    }
+
+    .toggle-btn.on {
+      background: #5e9977;
+      border-color: #5e9977;
+      color: #fff;
     }
 
     /* ── Facilitator: clear button ── */
     .clear-btn {
-      background: none;
-      border: 1.5px solid #cdd9d5;
-      color: #7a9990;
-      font-size: 0.88rem;
-      cursor: pointer;
-      padding: 0.75rem;
-      border-radius: 14px;
+      display: block;
       width: 100%;
-      transition: background 0.15s;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background .15s, transform .1s;
+      letter-spacing: .01em;
+      background: #f5e8e8;
+      color: #5a2020;
+      border: 1.5px solid #e8d4d4;
     }
 
     .clear-btn:hover {
-      background: #eaf0ee;
+      background: #efdcdc;
+    }
+
+    .clear-btn:active {
+      transform: scale(.98);
     }
 
     /* ── Empty state ── */
@@ -306,9 +334,6 @@
     <p>Pass the device to the next person</p>
   </div>
 
-  <div class="footer">
-    <button class="toggle-btn" onclick="switchView('facilitator')">Facilitator view →</button>
-  </div>
 </div>
 
 <!-- ────────────────── FACILITATOR VIEW ────────────────── -->
@@ -324,15 +349,20 @@
     <div class="avg-meta">out of 5</div>
   </div>
 
-  <div class="bars" id="bars"></div>
+  <div id="spread-section">
+    <div style="font-size:11px; font-weight:700; color:#7a9990; letter-spacing:.07em; text-transform:uppercase; margin-bottom:12px">Response spread</div>
+    <div class="bars" id="bars"></div>
+  </div>
   <div class="empty" id="empty-msg">Responses will appear here</div>
 
   <button class="clear-btn" onclick="clearAll()">Clear all responses</button>
 
-  <div class="footer">
-    <button class="toggle-btn" onclick="switchView('participant')">← Participant view</button>
-  </div>
 </div>
+
+<nav>
+  <button class="toggle-btn on" id="nav-participant" onclick="switchView('participant')">Participant</button>
+  <button class="toggle-btn"    id="nav-facilitator" onclick="switchView('facilitator')">Facilitator</button>
+</nav>
 
 <script>
   const KEY = 'workshop_energy_v1';
@@ -368,6 +398,8 @@
   function switchView(view) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById(view + '-view').classList.add('active');
+    document.getElementById('nav-participant').classList.toggle('on', view === 'participant');
+    document.getElementById('nav-facilitator').classList.toggle('on', view === 'facilitator');
     if (view === 'facilitator') renderFacilitator();
   }
 
@@ -390,14 +422,16 @@
     const bars = document.getElementById('bars');
     const emptyMsg = document.getElementById('empty-msg');
 
+    const spreadSection = document.getElementById('spread-section');
+
     if (total === 0) {
       bars.innerHTML = '';
-      bars.style.display = 'none';
+      spreadSection.style.display = 'none';
       emptyMsg.style.display = 'flex';
       return;
     }
 
-    bars.style.display = 'flex';
+    spreadSection.style.display = 'block';
     emptyMsg.style.display = 'none';
 
     const maxCount = Math.max(...Object.values(counts), 1);
