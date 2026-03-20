@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Parking Lot</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --bg:      #f4f7f6;
+      --card:    #ffffff;
+      --green:   #5e9977;
+      --green-dk:#4a7d61;
+      --red-txt: #5a2020;
+      --text:    #2e3d38;
+      --muted:   #7a9990;
+      --border:  #cdd9d5;
+      --shadow:  0 2px 14px rgba(0,0,0,0.06);
+      --radius:  14px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .header h1 {
+      font-size: 1.55rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .header p {
+      margin-top: 0.35rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ── Nav ── */
+    nav {
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+    }
+
+    .tab {
+      padding: 9px 20px;
+      border: 1.5px solid var(--border);
+      border-radius: 99px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .15s;
+      font-family: inherit;
+    }
+
+    .tab.on {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+    }
+
+    /* ── Views ── */
+    main {
+      flex: 1;
+      padding: 2rem 1.25rem 5rem;
+      max-width: 560px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .view { display: none; flex-direction: column; gap: 16px; }
+    .view.on { display: flex; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .card-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    /* ── Field label ── */
+    .field-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    /* ── Textarea ── */
+    textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 13px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 16px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--bg);
+      resize: vertical;
+      outline: none;
+      transition: border-color .15s;
+      line-height: 1.5;
+    }
+
+    textarea:focus { border-color: var(--green); }
+
+    /* ── Char count ── */
+    .char-count {
+      text-align: right;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 5px;
+    }
+
+    .char-count.warn { color: #b85c2a; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background .15s, transform .1s;
+      letter-spacing: .01em;
+    }
+
+    .btn:active { transform: scale(.98); }
+    .btn-green  { background: var(--green);  color: #fff; }
+    .btn-green:hover { background: var(--green-dk); }
+    .btn-red   { background: #f5e8e8; color: var(--red-txt); border: 1.5px solid #e8d4d4; }
+    .btn-red:hover { background: #efdcdc; }
+    .btn:disabled { opacity: .38; cursor: default; pointer-events: none; }
+
+    /* ── Confirmed state ── */
+    .confirmed {
+      text-align: center;
+      padding: 24px 0;
+    }
+
+    .check-circle {
+      width: 58px; height: 58px;
+      background: var(--green);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+
+    .confirmed h2 { font-size: 20px; margin-bottom: 8px; }
+    .confirmed p  { font-size: 15px; color: var(--muted); line-height: 1.5; }
+
+    .add-another-btn {
+      margin-top: 20px;
+      padding: 10px 22px;
+      border: 1.5px solid var(--border);
+      border-radius: 99px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .15s;
+      font-family: inherit;
+    }
+
+    .add-another-btn:hover {
+      border-color: var(--green);
+      color: var(--text);
+    }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center;
+      padding: 40px 0;
+    }
+
+    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-msg  { color: var(--muted); font-size: 16px; line-height: 1.5; }
+
+    /* ── Parking lot cards ── */
+    .lot-section-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      margin-top: 4px;
+    }
+
+    .lot-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: opacity .25s;
+    }
+
+    .lot-card.covered {
+      opacity: 0.5;
+    }
+
+    .lot-card-body {
+      font-size: 15px;
+      line-height: 1.55;
+      color: var(--text);
+    }
+
+    .lot-card-meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .lot-card-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .action-btn {
+      flex: 1;
+      padding: 9px 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .15s;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .action-btn:active { transform: scale(.97); }
+
+    .action-btn.comeback {
+      border-color: #c8e6d4;
+      background: #edf8f2;
+      color: #2a5c40;
+    }
+
+    .action-btn.comeback:hover {
+      background: #c8e6d4;
+    }
+
+    .action-btn.comeback.active {
+      background: #c8e6d4;
+      border-color: #8ec8a8;
+      color: #1a4d30;
+    }
+
+    .action-btn.covered-btn {
+      border-color: var(--border);
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .action-btn.covered-btn:hover {
+      background: #e8efed;
+      color: var(--text);
+    }
+
+    .action-btn.covered-btn.active {
+      background: #d6eaf0;
+      border-color: #8ab8cc;
+      color: #1e4a5a;
+    }
+
+    .lot-card-status {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 99px;
+      display: inline-block;
+      align-self: flex-start;
+    }
+
+    .status-comeback {
+      background: #edf8f2;
+      color: #2a5c40;
+      border: 1px solid #c8e6d4;
+    }
+
+    .status-covered {
+      background: #d6eaf0;
+      color: #1e4a5a;
+      border: 1px solid #8ab8cc;
+    }
+
+    /* ── Count summary ── */
+    .lot-summary {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .summary-chip {
+      padding: 5px 13px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .chip-open    { background: #e8efed; color: var(--text); }
+    .chip-comeback { background: #edf8f2; color: #2a5c40; }
+    .chip-covered  { background: #d6eaf0; color: #1e4a5a; }
+  </style>
+</head>
+<body>
+
+<main>
+
+  <!-- ── PARTICIPANT VIEW ── -->
+  <div class="view on" id="v-participant">
+
+    <div class="header">
+      <h1>Parking Lot</h1>
+      <p>Don't lose that thought — park it here.<br>The facilitator will make sure it gets addressed.</p>
+    </div>
+
+    <div id="p-form">
+      <div class="card">
+        <span class="field-label">Your question or topic</span>
+        <textarea id="p-input" maxlength="280" placeholder="e.g. What happens when a team member leaves mid-sprint?" oninput="onInput()"></textarea>
+        <div class="char-count" id="char-count">0 / 280</div>
+      </div>
+      <button class="btn btn-green" id="submit-btn" onclick="submitItem()" disabled>Park it</button>
+    </div>
+
+    <div id="p-done" style="display:none">
+      <div class="card">
+        <div class="confirmed">
+          <div class="check-circle">✓</div>
+          <h2>Parked!</h2>
+          <p>The facilitator can see it.<br>You can be fully present now.</p>
+          <button class="add-another-btn" onclick="resetForm()">Add another</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── FACILITATOR VIEW ── -->
+  <div class="view" id="v-facilitator">
+
+    <div class="header">
+      <h1>Parking Lot</h1>
+      <p id="fac-summary-text">Submissions will appear here</p>
+    </div>
+
+    <div id="fac-empty" class="card">
+      <div class="empty">
+        <div class="empty-icon">🅿️</div>
+        <p class="empty-msg">Nothing parked yet.<br>Participants can add items from the Submit tab.</p>
+      </div>
+    </div>
+
+    <div id="fac-content" style="display:none; flex-direction:column; gap:16px">
+
+      <div class="lot-summary" id="lot-summary"></div>
+
+      <div id="open-section">
+        <div class="lot-section-label">Open</div>
+        <div id="open-cards" style="display:flex; flex-direction:column; gap:10px"></div>
+      </div>
+
+      <div id="comeback-section" style="display:none">
+        <div class="lot-section-label">Coming back to</div>
+        <div id="comeback-cards" style="display:flex; flex-direction:column; gap:10px"></div>
+      </div>
+
+      <div id="covered-section" style="display:none">
+        <div class="lot-section-label">Covered</div>
+        <div id="covered-cards" style="display:flex; flex-direction:column; gap:10px"></div>
+      </div>
+
+      <button class="btn btn-red" onclick="clearAll()" style="margin-top:4px">Clear all items</button>
+
+    </div>
+
+  </div>
+
+</main>
+
+<nav>
+  <button class="tab on" id="t-participant" onclick="go('participant')">Submit</button>
+  <button class="tab"    id="t-facilitator" onclick="go('facilitator')">Facilitator</button>
+</nav>
+
+<script>
+  const KEY = 'workshop_parkinglot_v1';
+
+  // ── state ──────────────────────────────────────────────────
+  function load() {
+    try {
+      const d = JSON.parse(localStorage.getItem(KEY));
+      if (Array.isArray(d)) return d;
+    } catch (_) {}
+    return [];
+  }
+
+  function save(items) {
+    localStorage.setItem(KEY, JSON.stringify(items));
+  }
+
+  // ── participant ────────────────────────────────────────────
+  function onInput() {
+    const val = document.getElementById('p-input').value;
+    const len = val.length;
+    const cc = document.getElementById('char-count');
+    cc.textContent = len + ' / 280';
+    cc.classList.toggle('warn', len > 240);
+    document.getElementById('submit-btn').disabled = val.trim().length === 0;
+  }
+
+  function submitItem() {
+    const text = document.getElementById('p-input').value.trim();
+    if (!text) return;
+    const items = load();
+    items.push({ id: Date.now().toString(), text, status: 'open', ts: Date.now() });
+    save(items);
+    document.getElementById('p-form').style.display = 'none';
+    document.getElementById('p-done').style.display = 'block';
+  }
+
+  function resetForm() {
+    document.getElementById('p-input').value = '';
+    document.getElementById('char-count').textContent = '0 / 280';
+    document.getElementById('char-count').classList.remove('warn');
+    document.getElementById('submit-btn').disabled = true;
+    document.getElementById('p-form').style.display = 'flex';
+    document.getElementById('p-form').style.flexDirection = 'column';
+    document.getElementById('p-done').style.display = 'none';
+  }
+
+  // ── facilitator ────────────────────────────────────────────
+  function setStatus(id, status) {
+    const items = load();
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    item.status = item.status === status ? 'open' : status;
+    save(items);
+    renderFacilitator();
+  }
+
+  function renderFacilitator() {
+    const items = load();
+
+    const fEmpty   = document.getElementById('fac-empty');
+    const fContent = document.getElementById('fac-content');
+    const summaryText = document.getElementById('fac-summary-text');
+
+    if (items.length === 0) {
+      fEmpty.style.display = 'block';
+      fContent.style.display = 'none';
+      summaryText.textContent = 'Submissions will appear here';
+      return;
+    }
+
+    fEmpty.style.display = 'none';
+    fContent.style.display = 'flex';
+
+    const open     = items.filter(i => i.status === 'open');
+    const comeback = items.filter(i => i.status === 'comeback');
+    const covered  = items.filter(i => i.status === 'covered');
+    const total    = items.length;
+
+    summaryText.textContent = total === 1 ? '1 item parked' : `${total} items parked`;
+
+    // Summary chips
+    const summaryEl = document.getElementById('lot-summary');
+    summaryEl.innerHTML = '';
+    if (open.length)     summaryEl.innerHTML += `<span class="summary-chip chip-open">${open.length} open</span>`;
+    if (comeback.length) summaryEl.innerHTML += `<span class="summary-chip chip-comeback">${comeback.length} coming back</span>`;
+    if (covered.length)  summaryEl.innerHTML += `<span class="summary-chip chip-covered">${covered.length} covered</span>`;
+
+    // Sections
+    renderSection('open-section', 'open-cards', open);
+    renderSection('comeback-section', 'comeback-cards', comeback);
+    renderSection('covered-section', 'covered-cards', covered);
+  }
+
+  function renderSection(sectionId, cardsId, items) {
+    const section = document.getElementById(sectionId);
+    const container = document.getElementById(cardsId);
+    section.style.display = items.length === 0 ? 'none' : 'block';
+    container.innerHTML = '';
+    items.forEach(item => container.appendChild(makeCard(item)));
+  }
+
+  function makeCard(item) {
+    const div = document.createElement('div');
+    div.className = 'lot-card' + (item.status === 'covered' ? ' covered' : '');
+
+    const isComeback = item.status === 'comeback';
+    const isCovered  = item.status === 'covered';
+
+    div.innerHTML = `
+      <div class="lot-card-body">${escHtml(item.text)}</div>
+      <div class="lot-card-actions">
+        <button class="action-btn comeback ${isComeback ? 'active' : ''}"
+                onclick="setStatus('${item.id}', 'comeback')">
+          ${isComeback ? '✓ Coming back to this' : 'We\'ll come back to this'}
+        </button>
+        <button class="action-btn covered-btn ${isCovered ? 'active' : ''}"
+                onclick="setStatus('${item.id}', 'covered')">
+          ${isCovered ? '✓ Covered' : 'Covered'}
+        </button>
+      </div>
+    `;
+    return div;
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function clearAll() {
+    if (!confirm('Clear all parked items?')) return;
+    save([]);
+    renderFacilitator();
+  }
+
+  // ── navigation ─────────────────────────────────────────────
+  function go(v) {
+    ['participant', 'facilitator'].forEach(n => {
+      document.getElementById('v-' + n).classList.toggle('on', n === v);
+      document.getElementById('t-' + n).classList.toggle('on', n === v);
+    });
+    if (v === 'facilitator') renderFacilitator();
+  }
+
+  // ── cross-tab sync ─────────────────────────────────────────
+  window.addEventListener('storage', e => {
+    if (e.key !== KEY) return;
+    const active = document.getElementById('v-facilitator').classList.contains('on');
+    if (active) renderFacilitator();
+  });
+
+  // Polling fallback for same-tab updates and multi-device refresh
+  setInterval(() => {
+    if (document.getElementById('v-facilitator').classList.contains('on')) {
+      renderFacilitator();
+    }
+  }, 3000);
+
+  // ── boot ───────────────────────────────────────────────────
+  renderFacilitator();
+</script>
+
+</body>
+</html>
