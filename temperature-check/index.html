@@ -451,6 +451,36 @@
 
     .btn-ghost:hover { background: var(--bg); color: var(--text); }
 
+    .moves-retry {
+      display: none;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      margin-top: 4px;
+    }
+
+    .moves-retry-note {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .btn-retry {
+      padding: 6px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      color: var(--muted);
+      background: transparent;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+
+    .btn-retry:hover { background: var(--bg); color: var(--text); border-color: #b0b8b4; }
+
     /* ── Word cloud ── */
     .word-cloud {
       display: flex;
@@ -519,6 +549,35 @@
       <p style="font-size:14px; color:var(--muted); font-style:italic; line-height:1.45" id="active-preview"></p>
       <div style="height:14px"></div>
       <button class="btn btn-red" onclick="resetQ()">Clear question &amp; responses</button>
+    </div>
+
+    <!-- Suggested moves (facilitator-only; shown when polarised or low average) -->
+    <div id="f-moves-wrap" style="display:none; flex-direction:column; gap:16px">
+
+      <div class="card" style="padding-bottom:14px">
+        <div class="api-bar">
+          <label for="moves-api-key">Anthropic API key</label>
+          <input type="password" id="moves-api-key" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
+          <span class="api-note">Not stored anywhere</span>
+        </div>
+      </div>
+
+      <div class="moves-card" id="f-moves-card">
+        <span class="moves-label">Suggested moves</span>
+        <div id="f-moves-body">
+          <div class="moves-loading" id="f-moves-loading" style="display:none">
+            <div class="moves-spinner"></div>
+            <span>Generating suggestions…</span>
+          </div>
+          <div class="moves-error" id="f-moves-error" style="display:none"></div>
+          <div id="f-moves-list"></div>
+          <div class="moves-retry" id="f-moves-retry">
+            <span class="moves-retry-note">Not quite right? Get different suggestions.</span>
+            <button class="btn-retry" onclick="retryMoves()">Try different suggestions</button>
+          </div>
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -613,31 +672,6 @@
       <div class="card" id="r-words-card" style="display:none">
         <span class="field-label" style="margin-bottom:16px; display:block">In their words</span>
         <div class="word-cloud" id="r-word-cloud"></div>
-      </div>
-
-      <!-- Suggested moves (shown only when polarised or low average) -->
-      <div id="r-moves-wrap" style="display:none; flex-direction:column; gap:16px">
-
-        <div class="card" style="padding-bottom:14px">
-          <div class="api-bar">
-            <label for="moves-api-key">Anthropic API key</label>
-            <input type="password" id="moves-api-key" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
-            <span class="api-note">Not stored anywhere</span>
-          </div>
-        </div>
-
-        <div class="moves-card" id="r-moves-card">
-          <span class="moves-label">Suggested moves</span>
-          <div id="r-moves-body">
-            <div class="moves-loading" id="r-moves-loading" style="display:none">
-              <div class="moves-spinner"></div>
-              <span>Generating suggestions…</span>
-            </div>
-            <div class="moves-error" id="r-moves-error" style="display:none"></div>
-            <div id="r-moves-list"></div>
-          </div>
-        </div>
-
       </div>
 
     </div>
@@ -735,6 +769,29 @@
       card.style.display = 'none';
       document.getElementById('activate-btn').textContent = 'Activate question';
     }
+
+    // Suggested moves — only visible to facilitator
+    const movesWrap = document.getElementById('f-moves-wrap');
+    const rs = s.rs, n = s.rs.length;
+    const sc = scores(rs);
+    const avg = n ? sc.reduce((a, b) => a + b, 0) / n : null;
+    const needsMoves = s.on && s.q && n >= 2 && avg !== null && (isPolarised(sc) || avg < 3);
+
+    if (!needsMoves) {
+      movesWrap.style.display = 'none';
+      movesLastKey   = null;
+      movesPrevNames = [];
+      return;
+    }
+
+    movesWrap.style.display = 'flex';
+
+    // Build a key so we only call the API once per distinct situation
+    const conditionKey = s.qid + '|' + (isPolarised(sc) ? 'polarised' : 'low') + '|' + avg.toFixed(1);
+    if (conditionKey === movesLastKey) return; // already fetched for this state
+    movesLastKey = conditionKey;
+
+    fetchSuggestedMoves(s.q, sc, avg);
   }
 
   // ── participant ────────────────────────────────────────────
@@ -814,7 +871,8 @@
   }
 
   // ── results ────────────────────────────────────────────────
-  let movesLastKey = null; // tracks which question+condition combo we last fetched for
+  let movesLastKey   = null; // tracks which question+condition combo we last fetched for
+  let movesPrevNames = [];   // names from the last successful fetch, passed to retry prompt
 
   function isPolarised(sc) {
     if (sc.length < 4) return false;
@@ -886,35 +944,18 @@
 
     // Word cloud
     renderWordCloud(ws);
-
-    // Decide whether to show Suggested moves
-    const movesWrap = document.getElementById('r-moves-wrap');
-    const needsMoves = n >= 2 && avg !== null && (isPolarised(sc) || avg < 3);
-
-    if (!needsMoves) {
-      movesWrap.style.display = 'none';
-      movesLastKey = null;
-      return;
-    }
-
-    movesWrap.style.display = 'flex';
-
-    // Build a key so we only call the API once per distinct situation
-    const conditionKey = s.qid + '|' + (isPolarised(sc) ? 'polarised' : 'low') + '|' + avg.toFixed(1);
-    if (conditionKey === movesLastKey) return; // already fetched for this state
-    movesLastKey = conditionKey;
-
-    fetchSuggestedMoves(s.q, sc, avg);
   }
 
-  function fetchSuggestedMoves(question, rs, avg) {
-    const apiKey = document.getElementById('moves-api-key').value.trim();
-    const loadingEl = document.getElementById('r-moves-loading');
-    const errorEl   = document.getElementById('r-moves-error');
-    const listEl    = document.getElementById('r-moves-list');
+  function fetchSuggestedMoves(question, rs, avg, exclude) {
+    const apiKey    = document.getElementById('moves-api-key').value.trim();
+    const loadingEl = document.getElementById('f-moves-loading');
+    const errorEl   = document.getElementById('f-moves-error');
+    const listEl    = document.getElementById('f-moves-list');
+    const retryEl   = document.getElementById('f-moves-retry');
 
     errorEl.style.display  = 'none';
     listEl.innerHTML       = '';
+    retryEl.style.display  = 'none';
 
     if (!apiKey) {
       errorEl.textContent = 'Enter your Anthropic API key above to generate suggestions.';
@@ -935,11 +976,15 @@
       .map(v => `${v}: ${rs.filter(r => r === v).length}`)
       .join(', ');
 
+    const excludeLine = exclude && exclude.length
+      ? `\nDo NOT suggest any of these interventions (already shown): ${exclude.map(n => `"${n}"`).join(', ')}.`
+      : '';
+
     const prompt = `You are an experienced workshop facilitator. A temperature-check question has just revealed a problem in the room.
 
 Question asked: "${question}"
 Score distribution (1–5 scale): ${distribution}
-Situation: ${situation}
+Situation: ${situation}${excludeLine}
 
 Suggest 2–3 concrete facilitation interventions the facilitator could try right now to address this. Each should be something that can be done in the next 5–10 minutes.
 
@@ -974,11 +1019,13 @@ Return ONLY a JSON array. No prose, no markdown fences. Each element:
         throw new Error('Could not parse the response. Please try again.');
       }
       if (!Array.isArray(moves) || moves.length === 0) throw new Error('Unexpected response. Please try again.');
+      movesPrevNames = moves.map(m => m.name);
       listEl.innerHTML = moves.map(m => `
         <div class="move-item">
           <span class="move-name">${escapeHtml(m.name)}</span>
           <span class="move-desc">${escapeHtml(m.action)}</span>
         </div>`).join('');
+      retryEl.style.display = 'flex';
     })
     .catch(err => {
       errorEl.textContent = err.message;
@@ -988,6 +1035,16 @@ Return ONLY a JSON array. No prose, no markdown fences. Each element:
     .finally(() => {
       loadingEl.style.display = 'none';
     });
+  }
+
+  function retryMoves() {
+    const s  = st();
+    const rs = s.rs;
+    const sc = scores(rs);
+    const avg = sc.length ? sc.reduce((a, b) => a + b, 0) / sc.length : null;
+    if (!avg) return;
+    movesLastKey = null;
+    fetchSuggestedMoves(s.q, sc, avg, movesPrevNames);
   }
 
   function escapeHtml(str) {
@@ -1027,7 +1084,7 @@ Return ONLY a JSON array. No prose, no markdown fences. Each element:
   // Re-trigger suggestions when the API key is entered
   document.getElementById('moves-api-key').addEventListener('change', () => {
     movesLastKey = null;
-    if (curView === 'results') renderResults();
+    if (curView === 'facilitator') renderFacilitator();
   });
 
   // ── dev test mode ──────────────────────────────────────────
@@ -1049,7 +1106,8 @@ Return ONLY a JSON array. No prose, no markdown fences. Each element:
       { s: 5, w: 'solid' },     { s: 5, w: '' }
     ];
     localStorage.setItem(K.R, JSON.stringify(testResponses));
-    movesLastKey = null;
+    movesLastKey   = null;
+    movesPrevNames = [];
     renderAll();
     go('results');
   }
