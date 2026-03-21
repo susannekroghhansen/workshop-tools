@@ -14,9 +14,38 @@ const limiter = rateLimit({
   message: { error: 'Too many requests — you have exceeded 20 requests per hour. Please try again later.' },
 });
 
+const energyLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests.' },
+});
+
 app.use(cors({ origin: 'https://susannekroghhansen.github.io' }));
 app.use(express.json());
 app.use('/api/claude', limiter);
+
+// ── Energy check-in (in-memory) ──
+let energyCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+app.get('/api/energy', (req, res) => {
+  res.json(energyCounts);
+});
+
+app.post('/api/energy', energyLimiter, (req, res) => {
+  const { level } = req.body;
+  if (![1, 2, 3, 4, 5].includes(level)) {
+    return res.status(400).json({ error: 'level must be 1–5' });
+  }
+  energyCounts[level] = (energyCounts[level] || 0) + 1;
+  res.json(energyCounts);
+});
+
+app.delete('/api/energy', (req, res) => {
+  energyCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  res.json(energyCounts);
+});
 
 app.post('/api/claude', async (req, res) => {
   const { messages, system } = req.body;

@@ -595,7 +595,7 @@
 </div>
 
 <script>
-  const KEY = 'workshop_energy_v1';
+  const API_BASE = 'https://workshop-tools-api.onrender.com';
   let fPreview = false;
 
   const params = new URLSearchParams(window.location.search);
@@ -610,77 +610,65 @@
     1: 'You checked in at 1 — tired'
   };
 
-  // ── Data helpers ──
-  function getCounts() {
+  // ── API helpers ──
+  async function fetchCounts() {
     try {
-      const data = JSON.parse(localStorage.getItem(KEY));
-      if (data && typeof data === 'object') return data;
-    } catch (_) {}
-    return { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      const res = await fetch(`${API_BASE}/api/energy`);
+      if (!res.ok) throw new Error();
+      return await res.json();
+    } catch (_) {
+      return { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    }
   }
 
-  function saveCounts(c) {
-    localStorage.setItem(KEY, JSON.stringify(c));
+  async function postRating(level) {
+    const res = await fetch(`${API_BASE}/api/energy`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ level })
+    });
+    if (!res.ok) throw new Error('Submit failed');
+    return await res.json();
+  }
+
+  async function deleteAllCounts() {
+    await fetch(`${API_BASE}/api/energy`, { method: 'DELETE' });
   }
 
   // ── Submit ──
-  function submitRating(level) {
-    const counts = getCounts();
-    counts[level] = (counts[level] || 0) + 1;
-    saveCounts(counts);
+  async function submitRating(level) {
+    let counts;
+    try {
+      counts = await postRating(level);
+    } catch (_) {
+      counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    }
 
     if (isFacilitator) {
       const grid = document.getElementById('facilitator-input-grid');
       const ty = document.getElementById('thankyou-facilitator');
       grid.style.display = 'none';
       ty.classList.add('show');
-      renderFacilitator();
+      renderFacilitatorWith(counts);
       setTimeout(() => {
         ty.classList.remove('show');
         grid.style.display = 'flex';
       }, 2400);
     } else {
-      showParticipantResults(level);
+      showParticipantResults(level, counts);
     }
   }
 
-  // ── Participant results ──
-  function showParticipantResults(myRating) {
-    document.getElementById('participant-input').style.display = 'none';
-
-    const results = document.getElementById('participant-results');
-    results.style.display = 'flex';
-
-    const badge = document.getElementById('p-contribution-badge');
-    badge.className = 'contribution-badge cb' + myRating;
-    badge.innerHTML = `<span class="badge-dot"></span>${RATING_LABELS[myRating]}`;
-
-    renderParticipantResults(myRating);
-
-    window.addEventListener('storage', (e) => {
-      if (e.key === KEY) renderParticipantResults(myRating);
-    });
-    setInterval(() => renderParticipantResults(myRating), 3000);
-  }
-
-  function renderParticipantResults(myRating) {
-    const counts = getCounts();
-    let total = 0, sum = 0;
-    for (let i = 1; i <= 5; i++) { total += counts[i]; sum += i * counts[i]; }
-
-    document.getElementById('p-total-label').textContent =
-      total === 1 ? '1 person has checked in' : `${total} people have checked in`;
-
-    document.getElementById('p-avg-display').textContent =
-      total === 0 ? '—' : (sum / total).toFixed(1);
-
-    const barsEl = document.getElementById('p-bars');
+  // ── Render helpers ──
+  function renderBars(containerId, counts, myRating) {
+    const barsEl = document.getElementById(containerId);
     const maxCount = Math.max(...Object.values(counts), 1);
     barsEl.innerHTML = '';
     for (let i = 5; i >= 1; i--) {
       const count = counts[i];
       const row = document.createElement('div');
-      row.className = 'bar-row p-bar-row' + (i === myRating ? ' mine' : '');
+      const isParticipant = myRating !== undefined;
+      row.className = 'bar-row' + (isParticipant ? ' p-bar-row' : '') + (i === myRating ? ' mine' : '');
       row.innerHTML = `
         <span class="bar-num">${i}</span>
         <div class="bar-track"><div class="bar-fill bf${i}" style="width:${(count / maxCount) * 100}%"></div></div>
@@ -690,9 +678,38 @@
     }
   }
 
+  // ── Participant results ──
+  function showParticipantResults(myRating, initialCounts) {
+    document.getElementById('participant-input').style.display = 'none';
+
+    const results = document.getElementById('participant-results');
+    results.style.display = 'flex';
+
+    const badge = document.getElementById('p-contribution-badge');
+    badge.className = 'contribution-badge cb' + myRating;
+    badge.innerHTML = `<span class="badge-dot"></span>${RATING_LABELS[myRating]}`;
+
+    renderParticipantResultsWith(myRating, initialCounts);
+    setInterval(() => {
+      fetchCounts().then(c => renderParticipantResultsWith(myRating, c));
+    }, 3000);
+  }
+
+  function renderParticipantResultsWith(myRating, counts) {
+    let total = 0, sum = 0;
+    for (let i = 1; i <= 5; i++) { total += counts[i]; sum += i * counts[i]; }
+
+    document.getElementById('p-total-label').textContent =
+      total === 1 ? '1 person has checked in' : `${total} people have checked in`;
+
+    document.getElementById('p-avg-display').textContent =
+      total === 0 ? '—' : (sum / total).toFixed(1);
+
+    renderBars('p-bars', counts, myRating);
+  }
+
   // ── Facilitator results ──
-  function renderFacilitator() {
-    const counts = getCounts();
+  function renderFacilitatorWith(counts) {
     let total = 0, sum = 0;
     for (let i = 1; i <= 5; i++) { total += counts[i]; sum += i * counts[i]; }
 
@@ -716,26 +733,18 @@
 
     spreadSection.style.display = 'block';
     emptyMsg.style.display = 'none';
-
-    const maxCount = Math.max(...Object.values(counts), 1);
-    bars.innerHTML = '';
-    for (let i = 5; i >= 1; i--) {
-      const count = counts[i];
-      const row = document.createElement('div');
-      row.className = 'bar-row';
-      row.innerHTML = `
-        <span class="bar-num">${i}</span>
-        <div class="bar-track"><div class="bar-fill bf${i}" style="width:${(count / maxCount) * 100}%"></div></div>
-        <span class="bar-count">${count}</span>
-      `;
-      bars.appendChild(row);
-    }
+    renderBars('bars', counts, undefined);
   }
 
-  function clearAll() {
+  async function renderFacilitator() {
+    const counts = await fetchCounts();
+    renderFacilitatorWith(counts);
+  }
+
+  async function clearAll() {
     if (!confirm('Clear all responses?')) return;
-    saveCounts({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
-    renderFacilitator();
+    await deleteAllCounts();
+    renderFacilitatorWith({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
   }
 
   // ── QR code ──
@@ -779,9 +788,6 @@
       document.getElementById('facilitator-page').classList.add('active');
       renderFacilitator();
       generateQR();
-      window.addEventListener('storage', (e) => {
-        if (e.key === KEY) renderFacilitator();
-      });
       setInterval(renderFacilitator, 3000);
 
       // Add fixed toggle bar
