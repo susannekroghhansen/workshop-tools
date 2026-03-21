@@ -20,6 +20,7 @@
       min-height: 100vh;
     }
 
+
     /* ── Facilitator badge ── */
     .facilitator-badge {
       display: none;
@@ -332,6 +333,48 @@
       padding: 1.5rem 0;
     }
 
+    /* ── Preview mode ── */
+    .preview-banner {
+      background: #e8f0ec;
+      border: 1.5px solid #cdd9d5;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 13px;
+      color: #4a7d61;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .toggle-preview-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid #cdd9d5;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .btn-ghost-preview {
+      max-width: 280px;
+      width: 100%;
+      padding: 12px;
+      border: 1.5px solid #cdd9d5;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      color: #7a9990;
+      background: transparent;
+      transition: background .15s, color .15s;
+    }
+
+    .btn-ghost-preview:hover { background: #f4f7f6; color: #2e3d38; }
+
     /* ── Clear button ── */
     .clear-btn {
       display: block;
@@ -465,9 +508,29 @@
   </div>
 </div>
 
+<!-- ────────────────── PREVIEW PAGE ────────────────── -->
+<div id="preview-page" class="page">
+  <div class="panel">
+    <div class="preview-banner">Preview mode — this is what participants see</div>
+    <div class="header">
+      <h1>How's your energy?</h1>
+      <p>Tap a number to check in</p>
+    </div>
+    <div class="energy-grid">
+      <button class="energy-btn e5" disabled><span class="num">5</span><span class="label">Buzzing — full energy</span></button>
+      <button class="energy-btn e4" disabled><span class="num">4</span><span class="label">Good — feeling engaged</span></button>
+      <button class="energy-btn e3" disabled><span class="num">3</span><span class="label">Okay — steady, middle ground</span></button>
+      <button class="energy-btn e2" disabled><span class="num">2</span><span class="label">Low — a bit flat</span></button>
+      <button class="energy-btn e1" disabled><span class="num">1</span><span class="label">Empty — really tired</span></button>
+    </div>
+  </div>
+</div>
+
 <!-- ────────────────── FACILITATOR PAGE ────────────────── -->
 <div id="facilitator-page" class="page">
   <div class="panel">
+
+    <a href="../index.html" style="display:inline-flex; align-items:center; gap:5px; font-size:13px; color:#7a9990; text-decoration:none; margin-bottom:4px;">← Back to toolkit</a>
 
     <!-- QR code -->
     <div class="card qr-card">
@@ -533,6 +596,7 @@
 
 <script>
   const KEY = 'workshop_energy_v1';
+  let fPreview = false;
 
   const params = new URLSearchParams(window.location.search);
   const isFacilitator = params.get('facilitator') === '1234';
@@ -687,6 +751,27 @@
     });
   }
 
+  // ── Preview toggle ──
+  function togglePreview() {
+    fPreview = !fPreview;
+    const btn = document.getElementById('toggle-preview-btn');
+    const badge = document.querySelector('.facilitator-badge');
+    const facilitatorPage = document.getElementById('facilitator-page');
+    const previewPage = document.getElementById('preview-page');
+
+    if (fPreview) {
+      facilitatorPage.classList.remove('active');
+      previewPage.classList.add('active');
+      if (badge) badge.style.display = 'none';
+      if (btn) btn.textContent = 'Back to facilitator view';
+    } else {
+      previewPage.classList.remove('active');
+      facilitatorPage.classList.add('active');
+      if (badge) badge.style.display = '';
+      if (btn) btn.textContent = 'Preview participant view';
+    }
+  }
+
   // ── Init ──
   function init() {
     if (isFacilitator) {
@@ -698,6 +783,15 @@
         if (e.key === KEY) renderFacilitator();
       });
       setInterval(renderFacilitator, 3000);
+
+      // Add fixed toggle bar
+      const bar = document.createElement('div');
+      bar.className = 'toggle-preview-bar';
+      bar.innerHTML = '<button class="btn-ghost-preview" id="toggle-preview-btn" onclick="togglePreview()">Preview participant view</button>';
+      document.body.appendChild(bar);
+
+      // Extra bottom padding so content clears the bar
+      document.querySelector('#facilitator-page .panel').style.paddingBottom = '5rem';
     } else {
       document.getElementById('participant-page').classList.add('active');
     }

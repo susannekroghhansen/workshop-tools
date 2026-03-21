@@ -364,6 +364,8 @@
   <!-- ── PARTICIPANT VIEW ── -->
   <div class="view on" id="v-participant">
 
+    <a href="../index.html" style="display:inline-flex; align-items:center; gap:5px; font-size:13px; color:var(--muted); text-decoration:none; margin-bottom:4px;">← Back to toolkit</a>
+
     <div class="header">
       <h1>Parking Lot</h1>
       <p>Don't lose that thought — park it here.<br>The facilitator will make sure it gets addressed.</p>
@@ -393,6 +395,8 @@
 
   <!-- ── FACILITATOR VIEW ── -->
   <div class="view" id="v-facilitator">
+
+    <a href="../index.html" style="display:inline-flex; align-items:center; gap:5px; font-size:13px; color:var(--muted); text-decoration:none; margin-bottom:4px;">← Back to toolkit</a>
 
     <div class="header">
       <h1>Parking Lot</h1>
@@ -596,6 +600,7 @@
   }, 3000);
 
   // ── boot ───────────────────────────────────────────────────
+  if (new URLSearchParams(location.search).get('facilitator') === '1234') go('facilitator');
   renderFacilitator();
 </script>
 

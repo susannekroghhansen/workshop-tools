@@ -30,6 +30,31 @@
       flex-direction: column;
     }
 
+    main {
+      flex: 1;
+      padding: 2rem 1.25rem 3rem;
+      max-width: 560px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ── Facilitator badge ── */
+    .facilitator-badge {
+      position: fixed;
+      top: 14px;
+      right: 16px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 99px;
+      padding: 4px 10px;
+      z-index: 20;
+    }
+
     /* ── Header ── */
     .header {
       text-align: center;
@@ -49,49 +74,7 @@
       line-height: 1.5;
     }
 
-    /* ── Nav ── */
-    nav {
-      background: var(--card);
-      border-top: 1px solid var(--border);
-      padding: 10px 16px;
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 10;
-    }
-
-    .tab {
-      padding: 9px 20px;
-      border: 1.5px solid var(--border);
-      border-radius: 99px;
-      background: transparent;
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all .15s;
-      font-family: inherit;
-    }
-
-    .tab.on {
-      background: var(--blue);
-      border-color: var(--blue);
-      color: #fff;
-    }
-
     /* ── Views ── */
-    main {
-      flex: 1;
-      padding: 2rem 1.25rem 5rem;
-      max-width: 560px;
-      margin: 0 auto;
-      width: 100%;
-    }
-
     .view { display: none; flex-direction: column; gap: 16px; }
     .view.on { display: flex; }
 
@@ -478,176 +461,76 @@
 
     .confirmed h2 { font-size: 20px; margin-bottom: 8px; }
     .confirmed p  { font-size: 15px; color: var(--muted); line-height: 1.5; }
+
+    /* ── QR code card ── */
+    .qr-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .qr-card canvas {
+      border-radius: 8px;
+    }
+
+    .qr-url {
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      word-break: break-all;
+    }
+
+    /* ── Preview mode ── */
+    .preview-banner {
+      background: #e8f0ec;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 13px;
+      color: var(--blue-dk);
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .toggle-preview-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .toggle-preview-bar .btn-ghost {
+      max-width: 280px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
 
-<main>
-
-  <!-- ── FACILITATOR ── -->
-  <div class="view on" id="v-facilitator">
-
-    <div class="header">
-      <h1>Ask the room</h1>
-      <p>Type a question and activate it.<br>Participants respond from the Respond tab.</p>
-    </div>
-
-    <div class="card">
-      <span class="field-label" for="q-input">Question</span>
-      <textarea id="q-input" placeholder="e.g. How clear is your understanding of the next steps?"></textarea>
-    </div>
-
-    <button class="btn btn-blue" id="activate-btn" onclick="activateQ()">Activate question</button>
-
-    <button class="btn" id="test-btn" onclick="injectTestResponses()" style="display:none; background:#f0f4f2; color:var(--muted); border:1.5px dashed var(--border); font-size:13px; padding:11px">⚗️ Inject polarised responses (dev)</button>
-
-    <div class="card" id="active-card" style="display:none">
-      <div class="status-bar">
-        <span><span class="dot"></span>Question active</span>
-        <span id="live-count">0 responses</span>
-      </div>
-      <p style="font-size:14px; color:var(--muted); font-style:italic; line-height:1.45" id="active-preview"></p>
-      <div style="height:14px"></div>
-      <button class="btn btn-red" onclick="resetQ()">Clear question &amp; responses</button>
-    </div>
-
-    <!-- Suggested moves (facilitator-only; shown when polarised or low average) -->
-    <div id="f-moves-wrap" style="display:none; flex-direction:column; gap:16px">
-
-      <div class="moves-card" id="f-moves-card">
-        <span class="moves-label">Suggested moves</span>
-        <div id="f-moves-body">
-          <div class="moves-loading" id="f-moves-loading" style="display:none">
-            <div class="moves-spinner"></div>
-            <span>Generating suggestions…</span>
-          </div>
-          <div class="moves-error" id="f-moves-error" style="display:none"></div>
-          <div id="f-moves-list"></div>
-          <div class="moves-retry" id="f-moves-retry">
-            <span class="moves-retry-note">Not quite right? Get different suggestions.</span>
-            <button class="btn-retry" onclick="retryMoves()">Try different suggestions</button>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-  </div>
-
-  <!-- ── PARTICIPANT ── -->
-  <div class="view" id="v-participant">
-
-    <div class="card" id="p-waiting">
-      <div class="empty">
-        <div class="empty-icon">⏳</div>
-        <p class="empty-msg">Waiting for the facilitator<br>to post a question…</p>
-      </div>
-    </div>
-
-    <div id="p-active" style="display:none; display:flex; flex-direction:column; gap:16px">
-      <div class="card">
-        <span class="field-label">Question</span>
-        <p class="q-text" id="p-q-text"></p>
-      </div>
-      <div class="card">
-        <p style="font-size:14px; color:var(--muted); margin-bottom:14px">Pick a number that feels right.</p>
-        <div class="scale-row">
-          <button class="score-btn" onclick="pick(1)">1</button>
-          <button class="score-btn" onclick="pick(2)">2</button>
-          <button class="score-btn" onclick="pick(3)">3</button>
-          <button class="score-btn" onclick="pick(4)">4</button>
-          <button class="score-btn" onclick="pick(5)">5</button>
-        </div>
-        <div class="scale-ends">
-          <span>not at all</span>
-          <span>completely</span>
-        </div>
-        <button class="btn btn-blue" id="submit-btn" onclick="doSubmit()" disabled>Submit</button>
-      </div>
-    </div>
-
-    <div id="p-word" style="display:none; flex-direction:column; gap:16px">
-      <div class="card">
-        <p class="card-title" style="margin-bottom:6px">One word</p>
-        <p class="card-sub">Optional — what's the main reason you scored that way?</p>
-        <input type="text" class="word-input" id="p-word-input" maxlength="30" placeholder="e.g. unclear" autocomplete="off" autocorrect="off" spellcheck="false">
-      </div>
-      <button class="btn btn-blue" id="word-submit-btn" onclick="doWordSubmit()">Submit word</button>
-      <button class="btn-ghost" onclick="doWordSkip()">Skip</button>
-    </div>
-
-    <div class="card" id="p-done" style="display:none">
-      <div class="confirmed">
-        <div class="check-circle">✓</div>
-        <h2>Response recorded</h2>
-        <p>Thanks — your score has been noted.</p>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ── RESULTS ── -->
-  <div class="view" id="v-results">
-
-    <div class="card" id="r-empty">
-      <div class="empty">
-        <div class="empty-icon">📊</div>
-        <p class="empty-msg">No active question yet.</p>
-      </div>
-    </div>
-
-    <div id="r-content" style="display:none; display:flex; flex-direction:column; gap:24px">
-
-      <div class="card">
-        <span class="field-label">Question</span>
-        <p class="q-text" id="r-q-text"></p>
-      </div>
-
-      <div class="card">
-        <div class="avg-wrap">
-          <div class="avg-num" id="r-avg">—</div>
-          <div class="avg-label">average</div>
-        </div>
-        <p class="resp-count" id="r-count">No responses yet</p>
-      </div>
-
-      <div class="card">
-        <span class="field-label" style="margin-bottom:16px; display:block">Response spread</span>
-        <div id="r-bars"></div>
-        <div class="spread-ends">
-          <span>not at all</span>
-          <span>completely</span>
-        </div>
-      </div>
-
-      <!-- Word cloud (shown only when at least one word has been submitted) -->
-      <div class="card" id="r-words-card" style="display:none">
-        <span class="field-label" style="margin-bottom:16px; display:block">In their words</span>
-        <div class="word-cloud" id="r-word-cloud"></div>
-      </div>
-
-    </div>
-
-  </div>
-
-</main>
-
-<nav>
-  <button class="tab on" id="t-facilitator" onclick="go('facilitator')">Facilitator</button>
-  <button class="tab"    id="t-participant"  onclick="go('participant')">Respond</button>
-  <button class="tab"    id="t-results"      onclick="go('results')">Results</button>
-</nav>
+<main id="app"></main>
 
 <script>
+  // ── URL-based mode detection ────────────────────────────────
+  const params = new URLSearchParams(location.search);
+  const IS_FACILITATOR = params.get('facilitator') === '1234';
+  const IS_RESULTS     = params.get('view') === 'results';
+
   // Storage keys
   const K = { Q: 'tc_q', QID: 'tc_qid', R: 'tc_r', ON: 'tc_on' };
 
-  let curView    = 'facilitator';
-  let picked     = null;
-  let pendingScore = null; // score held while waiting for word input
+  let picked       = null;
+  let pendingScore = null;
 
-  // Bar colours: 1–5 matching energy check-in scale (red → blue-green)
   const BAR_COLORS = ['#c09898', '#7aaac0', '#8ab8cc', '#9ecfb8', '#8ec8a8'];
+  let movesLastKey   = null;
+  let movesPrevNames = [];
 
   // ── state ──────────────────────────────────────────────────
   function st() {
@@ -659,94 +542,99 @@
     };
   }
 
-  // Each response is stored as {s: score, w: word} — w may be ""
   function scores(rs) { return rs.map(r => typeof r === 'object' ? r.s : r); }
   function words(rs)  { return rs.map(r => typeof r === 'object' ? r.w : '').filter(w => w); }
 
-  function didRespond() {
-    return sessionStorage.getItem('r_' + st().qid) === '1';
+  function didRespond() { return sessionStorage.getItem('r_' + st().qid) === '1'; }
+  function markResponded() { sessionStorage.setItem('r_' + st().qid, '1'); }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  function markResponded() {
-    sessionStorage.setItem('r_' + st().qid, '1');
+  // ── render dispatch ────────────────────────────────────────
+  function renderApp() {
+    if (IS_FACILITATOR) renderFacilitatorMode();
+    else if (IS_RESULTS) renderResultsMode();
+    else renderParticipantMode();
   }
 
-  // ── navigation ─────────────────────────────────────────────
-  function go(v) {
-    curView = v;
-    ['facilitator', 'participant', 'results'].forEach(n => {
-      document.getElementById('v-' + n).classList.toggle('on', n === v);
-      document.getElementById('t-' + n).classList.toggle('on', n === v);
-    });
-    if (v === 'results')     renderResults();
-    if (v === 'participant') renderParticipant();
-    if (v === 'facilitator') renderFacilitator();
-  }
-
-  // ── facilitator ────────────────────────────────────────────
-  function activateQ() {
-    const text = document.getElementById('q-input').value.trim();
-    if (!text) return;
-    localStorage.setItem(K.Q,   text);
-    localStorage.setItem(K.QID, Date.now().toString());
-    localStorage.setItem(K.R,   '[]');
-    localStorage.setItem(K.ON,  '1');
-    picked = null;
-    pendingScore = null;
-    renderAll();
-  }
-
-  function resetQ() {
-    if (!confirm('Clear the current question and all responses?')) return;
-    localStorage.setItem(K.ON, '0');
-    localStorage.removeItem(K.Q);
-    localStorage.removeItem(K.QID);
-    localStorage.setItem(K.R, '[]');
-    document.getElementById('q-input').value = '';
-    picked = null;
-    renderAll();
-  }
-
-  function renderFacilitator() {
+  // ── PARTICIPANT MODE ───────────────────────────────────────
+  function renderParticipantMode() {
+    const app = document.getElementById('app');
     const s = st();
-    const card = document.getElementById('active-card');
-    if (s.on && s.q) {
-      card.style.display = 'block';
-      document.getElementById('active-preview').textContent = s.q;
-      const n = s.rs.length;
-      document.getElementById('live-count').textContent =
-        n + (n === 1 ? ' response' : ' responses');
-      document.getElementById('activate-btn').textContent = 'Replace question';
-    } else {
-      card.style.display = 'none';
-      document.getElementById('activate-btn').textContent = 'Activate question';
-    }
 
-    // Suggested moves — only visible to facilitator
-    const movesWrap = document.getElementById('f-moves-wrap');
-    const rs = s.rs, n = s.rs.length;
-    const sc = scores(rs);
-    const avg = n ? sc.reduce((a, b) => a + b, 0) / n : null;
-    const needsMoves = s.on && s.q && n >= 2 && avg !== null && (isPolarised(sc) || avg < 3);
-
-    if (!needsMoves) {
-      movesWrap.style.display = 'none';
-      movesLastKey   = null;
-      movesPrevNames = [];
+    // No question active
+    if (!s.on || !s.q) {
+      app.innerHTML = `
+        <div class="view on">
+          <div class="header">
+            <h1>Temperature Check</h1>
+          </div>
+          <div class="card">
+            <div class="empty">
+              <div class="empty-icon">⏳</div>
+              <p class="empty-msg">Waiting for the facilitator<br>to post a question…</p>
+            </div>
+          </div>
+        </div>`;
       return;
     }
 
-    movesWrap.style.display = 'flex';
+    // Already responded — show results
+    if (didRespond()) {
+      renderResultsMode();
+      return;
+    }
 
-    // Build a key so we only call the API once per distinct situation
-    const conditionKey = s.qid + '|' + (isPolarised(sc) ? 'polarised' : 'low') + '|' + avg.toFixed(1);
-    if (conditionKey === movesLastKey) return; // already fetched for this state
-    movesLastKey = conditionKey;
+    // Pending word step
+    if (pendingScore !== null) {
+      app.innerHTML = `
+        <div class="view on">
+          <div class="header">
+            <h1>One word</h1>
+            <p>Optional — what's the main reason you scored that way?</p>
+          </div>
+          <div class="card">
+            <input type="text" class="word-input" id="p-word-input" maxlength="30"
+              placeholder="e.g. unclear" autocomplete="off" autocorrect="off" spellcheck="false">
+          </div>
+          <button class="btn btn-blue" onclick="doWordSubmit()">Submit word</button>
+          <button class="btn-ghost" onclick="doWordSkip()">Skip</button>
+        </div>`;
+      document.getElementById('p-word-input').focus();
+      document.getElementById('p-word-input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') doWordSubmit();
+      });
+      return;
+    }
 
-    fetchSuggestedMoves(s.q, sc, avg);
+    // Active question — show rating
+    app.innerHTML = `
+      <div class="view on">
+        <div class="header">
+          <h1>Temperature Check</h1>
+        </div>
+        <div class="card">
+          <span class="field-label">Question</span>
+          <p class="q-text">${escapeHtml(s.q)}</p>
+        </div>
+        <div class="card">
+          <p style="font-size:14px; color:var(--muted); margin-bottom:14px">Pick a number that feels right.</p>
+          <div class="scale-row" id="score-row">
+            ${[1,2,3,4,5].map(n => `<button class="score-btn" onclick="pick(${n})">${n}</button>`).join('')}
+          </div>
+          <div class="scale-ends">
+            <span>not at all</span>
+            <span>completely</span>
+          </div>
+          <button class="btn btn-blue" id="submit-btn" onclick="doSubmit()" disabled>Submit</button>
+        </div>
+      </div>`;
   }
 
-  // ── participant ────────────────────────────────────────────
   function pick(n) {
     picked = n;
     document.querySelectorAll('.score-btn').forEach((b, i) =>
@@ -760,12 +648,7 @@
     if (!s.on) return;
     pendingScore = picked;
     picked = null;
-    // Show the word follow-up step without saving yet
-    const active  = document.getElementById('p-active');
-    const wordWrap = document.getElementById('p-word');
-    hide(active);
-    document.getElementById('p-word-input').value = '';
-    wordWrap.style.display = 'flex';
+    renderParticipantMode();
   }
 
   function commitResponse(word) {
@@ -776,55 +659,323 @@
     localStorage.setItem(K.R, JSON.stringify(rs));
     markResponded();
     pendingScore = null;
-    renderAll();
+    // Redirect to results view
+    location.href = location.pathname + '?view=results';
   }
 
   function doWordSubmit() {
-    const word = document.getElementById('p-word-input').value.trim();
+    const word = (document.getElementById('p-word-input')?.value || '').trim();
     commitResponse(word);
   }
 
-  function doWordSkip() {
-    commitResponse('');
-  }
+  function doWordSkip() { commitResponse(''); }
 
-  function renderParticipant() {
+  // ── RESULTS MODE (participant read-only) ───────────────────
+  function renderResultsMode() {
+    const app = document.getElementById('app');
     const s = st();
-    const waiting  = document.getElementById('p-waiting');
-    const active   = document.getElementById('p-active');
-    const wordWrap = document.getElementById('p-word');
-    const done     = document.getElementById('p-done');
 
     if (!s.on || !s.q) {
-      show(waiting);
-      hide(active);
-      wordWrap.style.display = 'none';
-      hide(done);
-    } else if (didRespond()) {
-      hide(waiting);
-      hide(active);
-      wordWrap.style.display = 'none';
-      show(done);
-    } else if (pendingScore !== null) {
-      // Word step — word card is already visible; just ensure others are hidden
-      hide(waiting);
-      hide(active);
-      hide(done);
-    } else {
-      hide(waiting);
-      show(active);
-      wordWrap.style.display = 'none';
-      hide(done);
-      document.getElementById('p-q-text').textContent = s.q;
-      document.querySelectorAll('.score-btn').forEach(b => b.classList.remove('on'));
-      document.getElementById('submit-btn').disabled = true;
-      picked = null;
+      app.innerHTML = `
+        <div class="view on">
+          <div class="header"><h1>Temperature Check</h1></div>
+          <div class="card">
+            <div class="empty">
+              <div class="empty-icon">📊</div>
+              <p class="empty-msg">No active question yet.</p>
+            </div>
+          </div>
+        </div>`;
+      return;
     }
+
+    const rs = s.rs, n = rs.length;
+    const sc = scores(rs);
+    const ws = words(rs);
+    const avg = n ? sc.reduce((a,b) => a+b, 0) / n : null;
+    const counts = [1,2,3,4,5].map(v => sc.filter(r => r === v).length);
+    const maxC   = Math.max(1, ...counts);
+
+    const barsHtml = counts.map((c, i) => `
+      <div class="bar-row">
+        <span class="bar-num">${i+1}</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${(c/maxC*100).toFixed(1)}%; background:${BAR_COLORS[i]}"></div>
+        </div>
+        <span class="bar-ct">${c}</span>
+      </div>`).join('');
+
+    const wordCloudHtml = buildWordCloud(ws);
+
+    app.innerHTML = `
+      <div class="view on">
+        <div class="header">
+          <h1>Results</h1>
+        </div>
+        <div class="card">
+          <span class="field-label">Question</span>
+          <p class="q-text">${escapeHtml(s.q)}</p>
+        </div>
+        <div class="card">
+          <div class="avg-wrap">
+            <div class="avg-num">${avg !== null ? avg.toFixed(1) : '—'}</div>
+            <div class="avg-label">average</div>
+          </div>
+          <p class="resp-count">${n ? n + (n===1?' response':' responses') : 'No responses yet'}</p>
+        </div>
+        <div class="card">
+          <span class="field-label" style="margin-bottom:16px; display:block">Response spread</span>
+          ${barsHtml}
+          <div class="spread-ends"><span>not at all</span><span>completely</span></div>
+        </div>
+        ${wordCloudHtml ? `
+        <div class="card">
+          <span class="field-label" style="margin-bottom:16px; display:block">In their words</span>
+          <div class="word-cloud">${wordCloudHtml}</div>
+        </div>` : ''}
+      </div>`;
   }
 
-  // ── results ────────────────────────────────────────────────
-  let movesLastKey   = null; // tracks which question+condition combo we last fetched for
-  let movesPrevNames = [];   // names from the last successful fetch, passed to retry prompt
+  function buildWordCloud(ws) {
+    if (!ws.length) return '';
+    const freq = {};
+    ws.forEach(w => { const k = w.toLowerCase(); freq[k] = (freq[k]||0)+1; });
+    const entries = Object.entries(freq).sort((a,b) => b[1]-a[1]);
+    const maxF = entries[0][1];
+    return entries.map(([word, count]) => {
+      const size = Math.round(14 + (count/maxF)*20);
+      const opacity = 0.55 + (count/maxF)*0.45;
+      return `<span style="font-size:${size}px; opacity:${opacity}">${escapeHtml(word)}</span>`;
+    }).join('');
+  }
+
+  // ── FACILITATOR PREVIEW ────────────────────────────────────
+  function renderFacilitatorPreview() {
+    const app = document.getElementById('app');
+    const s = st();
+    const badge = document.querySelector('.facilitator-badge');
+    if (badge) badge.style.display = 'none';
+
+    const banner = `<div class="preview-banner">Preview mode — this is what participants see</div>`;
+
+    if (!s.on || !s.q) {
+      app.innerHTML = `
+        <div class="view on">
+          ${banner}
+          <div class="card">
+            <div class="empty">
+              <div class="empty-icon">⏳</div>
+              <p class="empty-msg">Waiting for the facilitator<br>to post a question…</p>
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    app.innerHTML = `
+      <div class="view on">
+        ${banner}
+        <div class="card">
+          <span class="field-label">Question</span>
+          <p class="q-text">${escapeHtml(s.q)}</p>
+        </div>
+        <div class="card">
+          <p style="font-size:14px; color:var(--muted); margin-bottom:14px">Pick a number that feels right.</p>
+          <div class="scale-row">
+            ${[1,2,3,4,5].map(n => `<button class="score-btn" disabled>${n}</button>`).join('')}
+          </div>
+          <div class="scale-ends"><span>not at all</span><span>completely</span></div>
+          <button class="btn btn-blue" disabled>Submit</button>
+        </div>
+        <div class="card">
+          <p class="card-title" style="margin-bottom:6px">One word</p>
+          <p class="card-sub">Optional — what's the main reason you scored that way?</p>
+          <input type="text" class="word-input" placeholder="e.g. unclear" disabled>
+        </div>
+      </div>`;
+  }
+
+  function togglePreview() {
+    fPreview = !fPreview;
+    const badge = document.querySelector('.facilitator-badge');
+    if (badge) badge.style.display = fPreview ? 'none' : '';
+    const btn = document.getElementById('toggle-preview-btn');
+    if (btn) btn.textContent = fPreview ? 'Back to facilitator view' : 'Preview participant view';
+    renderFacilitatorMode();
+  }
+
+  // ── FACILITATOR MODE ───────────────────────────────────────
+  function renderFacilitatorMode() {
+    if (fPreview) { renderFacilitatorPreview(); return; }
+    const badge = document.querySelector('.facilitator-badge');
+    if (badge) badge.style.display = '';
+    const app = document.getElementById('app');
+    const s = st();
+    const n = s.rs.length;
+    const sc = scores(s.rs);
+    const ws = words(s.rs);
+    const avg = n ? sc.reduce((a,b) => a+b, 0)/n : null;
+
+    const participantUrl = location.origin + location.pathname;
+
+    const activeCardHtml = s.on && s.q ? `
+      <div class="card">
+        <div class="status-bar">
+          <span><span class="dot"></span>Question active</span>
+          <span id="live-count">${n + (n===1?' response':' responses')}</span>
+        </div>
+        <p style="font-size:14px; color:var(--muted); font-style:italic; line-height:1.45">${escapeHtml(s.q)}</p>
+        <div style="height:14px"></div>
+        <button class="btn btn-red" onclick="resetQ()">Clear question &amp; responses</button>
+      </div>` : '';
+
+    const resultsHtml = s.on && s.q ? buildFacilitatorResults(s, sc, ws, avg) : '';
+
+    app.innerHTML = `
+      <div class="view on">
+        <a href="../index.html" style="display:inline-flex; align-items:center; gap:5px; font-size:13px; color:var(--muted); text-decoration:none; margin-bottom:4px;">
+          ← Back to toolkit
+        </a>
+        <div class="header">
+          <h1>Ask the room</h1>
+          <p>Activate a question for participants to respond.</p>
+        </div>
+
+        <div class="card">
+          <div class="qr-card">
+            <canvas id="qr-canvas"></canvas>
+            <p class="qr-url">${escapeHtml(participantUrl)}</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <span class="field-label">Question</span>
+          <textarea id="q-input" placeholder="e.g. How clear is your understanding of the next steps?">${escapeHtml(s.q)}</textarea>
+        </div>
+
+        <button class="btn btn-blue" id="activate-btn" onclick="activateQ()">
+          ${s.on && s.q ? 'Replace question' : 'Activate question'}
+        </button>
+
+        ${activeCardHtml}
+
+        ${s.on && s.q ? `
+        <div class="card">
+          <span class="field-label" style="margin-bottom:14px; display:block">Your rating</span>
+          <div class="scale-row" id="f-score-row">
+            ${[1,2,3,4,5].map(n => `<button class="score-btn${n===fPicked?' on':''}" onclick="fPick(${n})">${n}</button>`).join('')}
+          </div>
+          <div class="scale-ends"><span>not at all</span><span>completely</span></div>
+          <button class="btn btn-blue" id="f-submit-btn" onclick="fSubmit()" ${fPicked?'':'disabled'}>Submit my rating</button>
+        </div>` : ''}
+
+        ${resultsHtml}
+
+        <div id="f-moves-wrap" style="display:none; flex-direction:column; gap:16px">
+          <div class="moves-card">
+            <span class="moves-label">Suggested moves</span>
+            <div id="f-moves-body">
+              <div class="moves-loading" id="f-moves-loading" style="display:none">
+                <div class="moves-spinner"></div>
+                <span>Generating suggestions…</span>
+              </div>
+              <div class="moves-error" id="f-moves-error" style="display:none"></div>
+              <div id="f-moves-list"></div>
+              <div class="moves-retry" id="f-moves-retry">
+                <span class="moves-retry-note">Not quite right? Get different suggestions.</span>
+                <button class="btn-retry" onclick="retryMoves()">Try different suggestions</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>`;
+
+    // Render QR code
+    renderQR(participantUrl);
+
+    // Trigger suggested moves if needed
+    maybeShowMoves(s, sc, avg);
+  }
+
+  // Facilitator's own score state (persists across re-renders)
+  let fPicked = null;
+  let fDidSubmit = false;
+  let fPreview = false;
+
+  function fPick(n) {
+    fPicked = n;
+    document.querySelectorAll('#f-score-row .score-btn').forEach((b, i) =>
+      b.classList.toggle('on', i+1 === n));
+    const btn = document.getElementById('f-submit-btn');
+    if (btn) btn.disabled = false;
+  }
+
+  function fSubmit() {
+    if (!fPicked) return;
+    const s = st();
+    if (!s.on) return;
+    const rs = s.rs;
+    rs.push({ s: fPicked, w: '' });
+    localStorage.setItem(K.R, JSON.stringify(rs));
+    fPicked = null;
+    fDidSubmit = true;
+    renderFacilitatorMode();
+  }
+
+  function buildFacilitatorResults(s, sc, ws, avg) {
+    const n = sc.length;
+    const counts = [1,2,3,4,5].map(v => sc.filter(r => r===v).length);
+    const maxC   = Math.max(1, ...counts);
+
+    const barsHtml = counts.map((c, i) => `
+      <div class="bar-row">
+        <span class="bar-num">${i+1}</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${(c/maxC*100).toFixed(1)}%; background:${BAR_COLORS[i]}"></div>
+        </div>
+        <span class="bar-ct">${c}</span>
+      </div>`).join('');
+
+    const wordCloudHtml = buildWordCloud(ws);
+
+    return `
+      <div class="card">
+        <div class="avg-wrap">
+          <div class="avg-num">${avg !== null ? avg.toFixed(1) : '—'}</div>
+          <div class="avg-label">average</div>
+        </div>
+        <p class="resp-count">${n ? n+(n===1?' response':' responses') : 'No responses yet'}</p>
+      </div>
+      <div class="card">
+        <span class="field-label" style="margin-bottom:16px; display:block">Response spread</span>
+        ${barsHtml}
+        <div class="spread-ends"><span>not at all</span><span>completely</span></div>
+      </div>
+      ${wordCloudHtml ? `
+      <div class="card">
+        <span class="field-label" style="margin-bottom:16px; display:block">In their words</span>
+        <div class="word-cloud">${wordCloudHtml}</div>
+      </div>` : ''}`;
+  }
+
+  function maybeShowMoves(s, sc, avg) {
+    const movesWrap = document.getElementById('f-moves-wrap');
+    if (!movesWrap) return;
+    const n = sc.length;
+    const needsMoves = s.on && s.q && n >= 2 && avg !== null && (isPolarised(sc) || avg < 3);
+    if (!needsMoves) {
+      movesWrap.style.display = 'none';
+      movesLastKey   = null;
+      movesPrevNames = [];
+      return;
+    }
+    movesWrap.style.display = 'flex';
+    const conditionKey = s.qid + '|' + (isPolarised(sc) ? 'polarised' : 'low') + '|' + avg.toFixed(1);
+    if (conditionKey === movesLastKey) return;
+    movesLastKey = conditionKey;
+    fetchSuggestedMoves(s.q, sc, avg);
+  }
 
   function isPolarised(sc) {
     if (sc.length < 4) return false;
@@ -834,80 +985,45 @@
     return low >= threshold && high >= threshold;
   }
 
-  function renderWordCloud(ws) {
-    const card    = document.getElementById('r-words-card');
-    const cloudEl = document.getElementById('r-word-cloud');
-
-    if (!ws.length) { card.style.display = 'none'; return; }
-    card.style.display = 'block';
-
-    // Count frequencies (case-insensitive)
-    const freq = {};
-    ws.forEach(w => {
-      const key = w.toLowerCase();
-      freq[key] = (freq[key] || 0) + 1;
-    });
-
-    const entries = Object.entries(freq).sort((a, b) => b[1] - a[1]);
-    const maxF    = entries[0][1];
-
-    cloudEl.innerHTML = entries.map(([word, count]) => {
-      // Scale font from 14px (freq 1) up to 34px (max freq)
-      const size = Math.round(14 + (count / maxF) * 20);
-      const opacity = 0.55 + (count / maxF) * 0.45;
-      return `<span style="font-size:${size}px; opacity:${opacity}">${escapeHtml(word)}</span>`;
-    }).join('');
+  // ── facilitator actions ────────────────────────────────────
+  function activateQ() {
+    const text = document.getElementById('q-input').value.trim();
+    if (!text) return;
+    localStorage.setItem(K.Q,   text);
+    localStorage.setItem(K.QID, Date.now().toString());
+    localStorage.setItem(K.R,   '[]');
+    localStorage.setItem(K.ON,  '1');
+    fPicked = null;
+    fDidSubmit = false;
+    movesLastKey   = null;
+    movesPrevNames = [];
+    renderFacilitatorMode();
   }
 
-  function renderResults() {
-    const s = st();
-    const empty   = document.getElementById('r-empty');
-    const content = document.getElementById('r-content');
-
-    if (!s.on || !s.q) { show(empty); hide(content); return; }
-    hide(empty); content.style.display = 'flex';
-
-    document.getElementById('r-q-text').textContent = s.q;
-
-    const rs = s.rs, n = rs.length;
-    const sc = scores(rs);
-    const ws = words(rs);
-    const avg = n ? sc.reduce((a, b) => a + b, 0) / n : null;
-
-    document.getElementById('r-avg').textContent = avg !== null ? avg.toFixed(1) : '—';
-    document.getElementById('r-count').textContent =
-      n ? n + (n === 1 ? ' response' : ' responses') : 'No responses yet';
-
-    const counts  = [1, 2, 3, 4, 5].map(v => sc.filter(r => r === v).length);
-    const maxC    = Math.max(1, ...counts);
-    const barsEl  = document.getElementById('r-bars');
-
-    barsEl.innerHTML = counts.map((c, i) => {
-      const pct = (c / maxC * 100).toFixed(1);
-      return `
-        <div class="bar-row">
-          <span class="bar-num">${i + 1}</span>
-          <div class="bar-track">
-            <div class="bar-fill" style="width:${pct}%; background:${BAR_COLORS[i]}"></div>
-          </div>
-          <span class="bar-ct">${c}</span>
-        </div>`;
-    }).join('');
-
-    // Word cloud
-    renderWordCloud(ws);
+  function resetQ() {
+    if (!confirm('Clear the current question and all responses?')) return;
+    localStorage.setItem(K.ON, '0');
+    localStorage.removeItem(K.Q);
+    localStorage.removeItem(K.QID);
+    localStorage.setItem(K.R, '[]');
+    fPicked = null;
+    fDidSubmit = false;
+    movesLastKey   = null;
+    movesPrevNames = [];
+    renderFacilitatorMode();
   }
 
+  // ── suggested moves ────────────────────────────────────────
   function fetchSuggestedMoves(question, rs, avg, exclude) {
     const loadingEl = document.getElementById('f-moves-loading');
     const errorEl   = document.getElementById('f-moves-error');
     const listEl    = document.getElementById('f-moves-list');
     const retryEl   = document.getElementById('f-moves-retry');
+    if (!loadingEl) return;
 
     errorEl.style.display  = 'none';
     listEl.innerHTML       = '';
     retryEl.style.display  = 'none';
-
     loadingEl.style.display = 'flex';
 
     const polarised = isPolarised(rs);
@@ -915,12 +1031,9 @@
       ? `The group is polarised — scores are split between high and low (average ${avg.toFixed(1)}/5).`
       : `The group has a low average score of ${avg.toFixed(1)}/5.`;
 
-    const distribution = [1,2,3,4,5]
-      .map(v => `${v}: ${rs.filter(r => r === v).length}`)
-      .join(', ');
-
-    const excludeLine = exclude && exclude.length
-      ? `\nDo NOT suggest any of these interventions (already shown): ${exclude.map(n => `"${n}"`).join(', ')}.`
+    const distribution = [1,2,3,4,5].map(v => `${v}: ${rs.filter(r => r===v).length}`).join(', ');
+    const excludeLine  = exclude && exclude.length
+      ? `\nDo NOT suggest any of these interventions (already shown): ${exclude.map(n=>`"${n}"`).join(', ')}.`
       : '';
 
     const prompt = `You are an experienced workshop facilitator. A temperature-check question has just revealed a problem in the room.
@@ -937,9 +1050,7 @@ Return ONLY a JSON array. No prose, no markdown fences. Each element:
     fetch('https://workshop-tools-api.onrender.com/api/claude', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: [{ role: 'user', content: prompt }]
-      })
+      body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
     })
     .then(res => {
       if (!res.ok) return res.json().then(b => { throw new Error(b.error?.message || `API error ${res.status}`); });
@@ -951,9 +1062,7 @@ Return ONLY a JSON array. No prose, no markdown fences. Each element:
       try {
         const cleaned = raw.replace(/^```[\w]*\n?/, '').replace(/\n?```$/, '').trim();
         moves = JSON.parse(cleaned);
-      } catch (_) {
-        throw new Error('Could not parse the response. Please try again.');
-      }
+      } catch (_) { throw new Error('Could not parse the response. Please try again.'); }
       if (!Array.isArray(moves) || moves.length === 0) throw new Error('Unexpected response. Please try again.');
       movesPrevNames = moves.map(m => m.name);
       listEl.innerHTML = moves.map(m => `
@@ -964,87 +1073,107 @@ Return ONLY a JSON array. No prose, no markdown fences. Each element:
       retryEl.style.display = 'flex';
     })
     .catch(err => {
-      errorEl.textContent = err.message;
-      errorEl.style.display = 'block';
-      movesLastKey = null; // allow retry
+      errorEl.textContent    = err.message;
+      errorEl.style.display  = 'block';
+      movesLastKey = null;
     })
-    .finally(() => {
-      loadingEl.style.display = 'none';
-    });
+    .finally(() => { loadingEl.style.display = 'none'; });
   }
 
   function retryMoves() {
     const s  = st();
-    const rs = s.rs;
-    const sc = scores(rs);
-    const avg = sc.length ? sc.reduce((a, b) => a + b, 0) / sc.length : null;
+    const sc = scores(s.rs);
+    const avg = sc.length ? sc.reduce((a,b)=>a+b,0)/sc.length : null;
     if (!avg) return;
     movesLastKey = null;
     fetchSuggestedMoves(s.q, sc, avg, movesPrevNames);
   }
 
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+  // ── QR code (pure JS, no library) ─────────────────────────
+  // Minimal QR renderer using the qrcode-generator approach via data URI
+  function renderQR(url) {
+    const canvas = document.getElementById('qr-canvas');
+    if (!canvas) return;
+    // Use Google Charts QR (no external lib needed, self-contained fallback via img)
+    // We'll draw it as an <img> instead and replace the canvas
+    const img = document.createElement('img');
+    img.width  = 180;
+    img.height = 180;
+    img.style.borderRadius = '8px';
+    // Use a QR API that works without CORS issues
+    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}&color=2e3d38&bgcolor=ffffff&margin=2`;
+    img.alt = 'QR code for participant URL';
+    canvas.replaceWith(img);
   }
 
-  // ── utils ──────────────────────────────────────────────────
-  function show(el) { el.style.display = 'block'; }
-  function hide(el) { el.style.display = 'none';  }
-  function renderAll() { renderFacilitator(); renderParticipant(); renderResults(); }
-
-  // ── cross-tab sync ─────────────────────────────────────────
+  // ── cross-tab sync (participant and results modes) ─────────
   window.addEventListener('storage', e => {
     if (!Object.values(K).includes(e.key)) return;
-    renderAll();
-    // Auto-navigate participant tabs to the respond view when a question activates
-    if (e.key === K.ON && e.newValue === '1' && curView !== 'facilitator') {
-      go('participant');
+    if (IS_FACILITATOR) {
+      renderFacilitatorMode();
+    } else if (IS_RESULTS) {
+      renderResultsMode();
+    } else {
+      // Auto-navigate participant to respond when a new question is activated
+      if (e.key === K.ON && e.newValue === '1') {
+        // New question — clear responded state if needed, reload
+        location.href = location.pathname;
+      }
+      renderParticipantMode();
     }
   });
 
-  // Polling fallback — keeps results live even without storage events
+  // Polling fallback
   setInterval(() => {
-    if (curView === 'results')     renderResults();
-    if (curView === 'facilitator') renderFacilitator();
+    if (IS_FACILITATOR) {
+      const s = st();
+      const liveCount = document.getElementById('live-count');
+      if (liveCount) {
+        const n = s.rs.length;
+        liveCount.textContent = n + (n===1?' response':' responses');
+      }
+      // Full re-render if results section may need updating
+      const sc = scores(s.rs);
+      const avg = sc.length ? sc.reduce((a,b)=>a+b,0)/sc.length : null;
+      maybeShowMoves(s, sc, avg);
+    } else if (IS_RESULTS) {
+      renderResultsMode();
+    }
   }, 2000);
 
-  // Submit word on Enter key
-  document.getElementById('p-word-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') doWordSubmit();
-  });
-
-
   // ── dev test mode ──────────────────────────────────────────
-  if (new URLSearchParams(location.search).has('test')) {
-    document.getElementById('test-btn').style.display = 'block';
+  if (params.has('test') && IS_FACILITATOR) {
+    window.injectTestResponses = function() {
+      const s = st();
+      if (!s.on || !s.q) { alert('Activate a question first.'); return; }
+      localStorage.setItem(K.R, JSON.stringify([
+        { s:1, w:'confusing' }, { s:1, w:'unclear' },
+        { s:1, w:'confusing' }, { s:1, w:'rushed' },
+        { s:5, w:'clear' },     { s:5, w:'clear' },
+        { s:5, w:'solid' },     { s:5, w:'' }
+      ]));
+      movesLastKey = null; movesPrevNames = [];
+      renderFacilitatorMode();
+    };
   }
 
-  function injectTestResponses() {
-    const s = st();
-    if (!s.on || !s.q) {
-      alert('Activate a question first, then inject test responses.');
-      return;
-    }
-    // Polarised spread with sample words
-    const testResponses = [
-      { s: 1, w: 'confusing' }, { s: 1, w: 'unclear' },
-      { s: 1, w: 'confusing' }, { s: 1, w: 'rushed' },
-      { s: 5, w: 'clear' },     { s: 5, w: 'clear' },
-      { s: 5, w: 'solid' },     { s: 5, w: '' }
-    ];
-    localStorage.setItem(K.R, JSON.stringify(testResponses));
-    movesLastKey   = null;
-    movesPrevNames = [];
-    renderAll();
-    go('results');
+  // ── facilitator chrome ─────────────────────────────────────
+  if (IS_FACILITATOR) {
+    const badge = document.createElement('div');
+    badge.className = 'facilitator-badge';
+    badge.textContent = 'Facilitator view';
+    document.body.appendChild(badge);
+
+    const bar = document.createElement('div');
+    bar.className = 'toggle-preview-bar';
+    bar.innerHTML = '<button class="btn-ghost" id="toggle-preview-btn" onclick="togglePreview()">Preview participant view</button>';
+    document.body.appendChild(bar);
+
+    document.getElementById('app').style.paddingBottom = '5rem';
   }
 
   // ── boot ───────────────────────────────────────────────────
-  renderAll();
+  renderApp();
 </script>
 
 </body>
