@@ -416,6 +416,58 @@
       line-height: 1.5;
     }
 
+    /* ── Word input (follow-up) ── */
+    .word-input {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 18px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      transition: border-color .15s;
+      text-align: center;
+      letter-spacing: .02em;
+    }
+
+    .word-input:focus { border-color: var(--blue); }
+
+    .btn-ghost {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      color: var(--muted);
+      background: transparent;
+      transition: background .15s, color .15s;
+    }
+
+    .btn-ghost:hover { background: var(--bg); color: var(--text); }
+
+    /* ── Word cloud ── */
+    .word-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      align-items: baseline;
+      justify-content: center;
+      padding: 8px 0 4px;
+      line-height: 1.4;
+    }
+
+    .word-cloud span {
+      color: var(--blue-dk);
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+
     /* ── Confirmed ── */
     .confirmed {
       text-align: center;
@@ -503,6 +555,16 @@
       </div>
     </div>
 
+    <div id="p-word" style="display:none; flex-direction:column; gap:16px">
+      <div class="card">
+        <p class="card-title" style="margin-bottom:6px">One word</p>
+        <p class="card-sub">Optional — what's the main reason you scored that way?</p>
+        <input type="text" class="word-input" id="p-word-input" maxlength="30" placeholder="e.g. unclear" autocomplete="off" autocorrect="off" spellcheck="false">
+      </div>
+      <button class="btn btn-blue" id="word-submit-btn" onclick="doWordSubmit()">Submit word</button>
+      <button class="btn-ghost" onclick="doWordSkip()">Skip</button>
+    </div>
+
     <div class="card" id="p-done" style="display:none">
       <div class="confirmed">
         <div class="check-circle">✓</div>
@@ -547,6 +609,12 @@
         </div>
       </div>
 
+      <!-- Word cloud (shown only when at least one word has been submitted) -->
+      <div class="card" id="r-words-card" style="display:none">
+        <span class="field-label" style="margin-bottom:16px; display:block">In their words</span>
+        <div class="word-cloud" id="r-word-cloud"></div>
+      </div>
+
       <!-- Suggested moves (shown only when polarised or low average) -->
       <div id="r-moves-wrap" style="display:none; flex-direction:column; gap:16px">
 
@@ -588,8 +656,9 @@
   // Storage keys
   const K = { Q: 'tc_q', QID: 'tc_qid', R: 'tc_r', ON: 'tc_on' };
 
-  let curView = 'facilitator';
-  let picked  = null;
+  let curView    = 'facilitator';
+  let picked     = null;
+  let pendingScore = null; // score held while waiting for word input
 
   // Bar colours: 1–5 matching energy check-in scale (red → blue-green)
   const BAR_COLORS = ['#c09898', '#7aaac0', '#8ab8cc', '#9ecfb8', '#8ec8a8'];
@@ -603,6 +672,10 @@
       on:  localStorage.getItem(K.ON) === '1'
     };
   }
+
+  // Each response is stored as {s: score, w: word} — w may be ""
+  function scores(rs) { return rs.map(r => typeof r === 'object' ? r.s : r); }
+  function words(rs)  { return rs.map(r => typeof r === 'object' ? r.w : '').filter(w => w); }
 
   function didRespond() {
     return sessionStorage.getItem('r_' + st().qid) === '1';
@@ -633,6 +706,7 @@
     localStorage.setItem(K.R,   '[]');
     localStorage.setItem(K.ON,  '1');
     picked = null;
+    pendingScore = null;
     renderAll();
   }
 
@@ -675,26 +749,63 @@
     if (!picked) return;
     const s = st();
     if (!s.on) return;
+    pendingScore = picked;
+    picked = null;
+    // Show the word follow-up step without saving yet
+    const active  = document.getElementById('p-active');
+    const wordWrap = document.getElementById('p-word');
+    hide(active);
+    document.getElementById('p-word-input').value = '';
+    wordWrap.style.display = 'flex';
+  }
+
+  function commitResponse(word) {
+    const s = st();
+    if (!s.on || pendingScore === null) return;
     const rs = s.rs;
-    rs.push(picked);
+    rs.push({ s: pendingScore, w: word.trim() });
     localStorage.setItem(K.R, JSON.stringify(rs));
     markResponded();
-    picked = null;
+    pendingScore = null;
     renderAll();
+  }
+
+  function doWordSubmit() {
+    const word = document.getElementById('p-word-input').value.trim();
+    commitResponse(word);
+  }
+
+  function doWordSkip() {
+    commitResponse('');
   }
 
   function renderParticipant() {
     const s = st();
-    const waiting = document.getElementById('p-waiting');
-    const active  = document.getElementById('p-active');
-    const done    = document.getElementById('p-done');
+    const waiting  = document.getElementById('p-waiting');
+    const active   = document.getElementById('p-active');
+    const wordWrap = document.getElementById('p-word');
+    const done     = document.getElementById('p-done');
 
     if (!s.on || !s.q) {
-      show(waiting); hide(active); hide(done);
+      show(waiting);
+      hide(active);
+      wordWrap.style.display = 'none';
+      hide(done);
     } else if (didRespond()) {
-      hide(waiting); hide(active); show(done);
+      hide(waiting);
+      hide(active);
+      wordWrap.style.display = 'none';
+      show(done);
+    } else if (pendingScore !== null) {
+      // Word step — word card is already visible; just ensure others are hidden
+      hide(waiting);
+      hide(active);
+      hide(done);
     } else {
-      hide(waiting); show(active); hide(done);
+      hide(waiting);
+      show(active);
+      wordWrap.style.display = 'none';
+      hide(done);
       document.getElementById('p-q-text').textContent = s.q;
       document.querySelectorAll('.score-btn').forEach(b => b.classList.remove('on'));
       document.getElementById('submit-btn').disabled = true;
@@ -705,12 +816,37 @@
   // ── results ────────────────────────────────────────────────
   let movesLastKey = null; // tracks which question+condition combo we last fetched for
 
-  function isPolarised(rs) {
-    if (rs.length < 4) return false;
-    const low  = rs.filter(r => r <= 2).length;
-    const high = rs.filter(r => r >= 4).length;
-    const threshold = Math.ceil(rs.length * 0.25);
+  function isPolarised(sc) {
+    if (sc.length < 4) return false;
+    const low  = sc.filter(r => r <= 2).length;
+    const high = sc.filter(r => r >= 4).length;
+    const threshold = Math.ceil(sc.length * 0.25);
     return low >= threshold && high >= threshold;
+  }
+
+  function renderWordCloud(ws) {
+    const card    = document.getElementById('r-words-card');
+    const cloudEl = document.getElementById('r-word-cloud');
+
+    if (!ws.length) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+
+    // Count frequencies (case-insensitive)
+    const freq = {};
+    ws.forEach(w => {
+      const key = w.toLowerCase();
+      freq[key] = (freq[key] || 0) + 1;
+    });
+
+    const entries = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+    const maxF    = entries[0][1];
+
+    cloudEl.innerHTML = entries.map(([word, count]) => {
+      // Scale font from 14px (freq 1) up to 34px (max freq)
+      const size = Math.round(14 + (count / maxF) * 20);
+      const opacity = 0.55 + (count / maxF) * 0.45;
+      return `<span style="font-size:${size}px; opacity:${opacity}">${escapeHtml(word)}</span>`;
+    }).join('');
   }
 
   function renderResults() {
@@ -724,13 +860,15 @@
     document.getElementById('r-q-text').textContent = s.q;
 
     const rs = s.rs, n = rs.length;
-    const avg = n ? rs.reduce((a, b) => a + b, 0) / n : null;
+    const sc = scores(rs);
+    const ws = words(rs);
+    const avg = n ? sc.reduce((a, b) => a + b, 0) / n : null;
 
     document.getElementById('r-avg').textContent = avg !== null ? avg.toFixed(1) : '—';
     document.getElementById('r-count').textContent =
       n ? n + (n === 1 ? ' response' : ' responses') : 'No responses yet';
 
-    const counts  = [1, 2, 3, 4, 5].map(v => rs.filter(r => r === v).length);
+    const counts  = [1, 2, 3, 4, 5].map(v => sc.filter(r => r === v).length);
     const maxC    = Math.max(1, ...counts);
     const barsEl  = document.getElementById('r-bars');
 
@@ -746,9 +884,12 @@
         </div>`;
     }).join('');
 
+    // Word cloud
+    renderWordCloud(ws);
+
     // Decide whether to show Suggested moves
     const movesWrap = document.getElementById('r-moves-wrap');
-    const needsMoves = n >= 2 && avg !== null && (isPolarised(rs) || avg < 3);
+    const needsMoves = n >= 2 && avg !== null && (isPolarised(sc) || avg < 3);
 
     if (!needsMoves) {
       movesWrap.style.display = 'none';
@@ -759,11 +900,11 @@
     movesWrap.style.display = 'flex';
 
     // Build a key so we only call the API once per distinct situation
-    const conditionKey = s.qid + '|' + (isPolarised(rs) ? 'polarised' : 'low') + '|' + avg.toFixed(1);
+    const conditionKey = s.qid + '|' + (isPolarised(sc) ? 'polarised' : 'low') + '|' + avg.toFixed(1);
     if (conditionKey === movesLastKey) return; // already fetched for this state
     movesLastKey = conditionKey;
 
-    fetchSuggestedMoves(s.q, rs, avg);
+    fetchSuggestedMoves(s.q, sc, avg);
   }
 
   function fetchSuggestedMoves(question, rs, avg) {
@@ -878,6 +1019,11 @@ Return ONLY a JSON array. No prose, no markdown fences. Each element:
     if (curView === 'facilitator') renderFacilitator();
   }, 2000);
 
+  // Submit word on Enter key
+  document.getElementById('p-word-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doWordSubmit();
+  });
+
   // Re-trigger suggestions when the API key is entered
   document.getElementById('moves-api-key').addEventListener('change', () => {
     movesLastKey = null;
@@ -895,8 +1041,13 @@ Return ONLY a JSON array. No prose, no markdown fences. Each element:
       alert('Activate a question first, then inject test responses.');
       return;
     }
-    // Polarised spread: four 1s and four 5s
-    const testResponses = [1, 1, 1, 1, 5, 5, 5, 5];
+    // Polarised spread with sample words
+    const testResponses = [
+      { s: 1, w: 'confusing' }, { s: 1, w: 'unclear' },
+      { s: 1, w: 'confusing' }, { s: 1, w: 'rushed' },
+      { s: 5, w: 'clear' },     { s: 5, w: 'clear' },
+      { s: 5, w: 'solid' },     { s: 5, w: '' }
+    ];
     localStorage.setItem(K.R, JSON.stringify(testResponses));
     movesLastKey = null;
     renderAll();
