@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Energy Check-In</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -19,23 +20,46 @@
       min-height: 100vh;
     }
 
-    .view {
+    /* ── Facilitator badge ── */
+    .facilitator-badge {
       display: none;
-      flex-direction: column;
-      min-height: 100vh;
-      padding: 2rem 1.25rem 5rem;
-      max-width: 480px;
-      margin: 0 auto;
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      background: rgba(94, 153, 119, 0.15);
+      border: 1px solid rgba(94, 153, 119, 0.35);
+      color: #3d7a5a;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 5px 10px;
+      border-radius: 99px;
+      z-index: 100;
     }
 
-    .view.active {
+    body.facilitator-mode .facilitator-badge {
+      display: block;
+    }
+
+    /* ── Pages ── */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── Shared panel ── */
+    .panel {
       display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      padding: 2rem 1.25rem 3rem;
+      max-width: 480px;
+      margin: 0 auto;
+      gap: 2rem;
     }
 
     /* ── Header ── */
     .header {
       text-align: center;
-      margin-bottom: 2rem;
     }
 
     .header h1 {
@@ -50,13 +74,19 @@
       color: #7a9990;
     }
 
-    /* ── Participant: energy buttons ── */
+    /* ── Shared card ── */
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 14px rgba(0,0,0,0.06);
+    }
+
+    /* ── Energy buttons ── */
     .energy-grid {
       display: flex;
       flex-direction: column;
       gap: 0.7rem;
-      flex: 1;
-      justify-content: center;
     }
 
     .energy-btn {
@@ -65,7 +95,7 @@
       gap: 1rem;
       padding: 1.1rem 1.4rem;
       border: none;
-      border-radius: 18px;
+      border-radius: 14px;
       cursor: pointer;
       width: 100%;
       text-align: left;
@@ -97,64 +127,115 @@
     .e2 { background: #d0e4ef; color: #1a3d55; }
     .e1 { background: #e8d6d6; color: #5a2020; }
 
-    /* ── Participant: confirmation ── */
+    /* ── Thank-you flash (facilitator only) ── */
     .thankyou {
       display: none;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      flex: 1;
       text-align: center;
-      gap: 0.75rem;
+      gap: 0.6rem;
+      padding: 1.5rem 0;
     }
 
-    .thankyou.show {
-      display: flex;
-    }
+    .thankyou.show { display: flex; }
 
     .check-circle {
-      width: 80px;
-      height: 80px;
+      width: 64px;
+      height: 64px;
       border-radius: 50%;
       background: #c8e6d4;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2.2rem;
+      font-size: 1.8rem;
       color: #1a4d30;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.25rem;
     }
 
     .thankyou h2 {
-      font-size: 1.4rem;
+      font-size: 1.2rem;
       font-weight: 600;
       color: #2e3d38;
     }
 
     .thankyou p {
       color: #7a9990;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
     }
 
-    /* ── Facilitator: average card ── */
-    .avg-card {
-      background: white;
-      border-radius: 20px;
-      padding: 1.4rem 1.5rem;
-      text-align: center;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 2px 14px rgba(0,0,0,0.06);
+    /* ── QR card ── */
+    .qr-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
     }
 
-    .avg-card .avg-label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
+    .qr-card .card-label {
+      font-size: 0.72rem;
+      font-weight: 700;
       letter-spacing: 0.09em;
+      text-transform: uppercase;
       color: #7a9990;
+      align-self: flex-start;
+    }
+
+    .qr-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.85rem;
+      width: 100%;
+    }
+
+    .qr-code-wrap {
+      background: white;
+      border: 1px solid #e4eeea;
+      border-radius: 14px;
+      padding: 14px;
+      display: inline-block;
+    }
+
+    .qr-code-wrap canvas,
+    .qr-code-wrap img {
+      display: block;
+      border-radius: 4px;
+    }
+
+    .qr-caption {
+      text-align: center;
+    }
+
+    .qr-caption strong {
+      display: block;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #2e3d38;
       margin-bottom: 0.2rem;
     }
 
-    .avg-card .avg-num {
+    .qr-caption span {
+      font-size: 0.78rem;
+      color: #7a9990;
+      word-break: break-all;
+    }
+
+    /* ── Results ── */
+    .avg-row {
+      text-align: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .avg-row .avg-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: #7a9990;
+      margin-bottom: 0.15rem;
+    }
+
+    .avg-row .avg-num {
       font-size: 4.5rem;
       font-weight: 700;
       letter-spacing: -0.04em;
@@ -162,18 +243,45 @@
       color: #5e9977;
     }
 
-    .avg-card .avg-meta {
+    .avg-row .avg-meta {
       margin-top: 0.3rem;
       font-size: 0.85rem;
       color: #7a9990;
     }
 
-    /* ── Facilitator: bars ── */
+    .live-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      margin-bottom: 1.1rem;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #5e9977;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.75); }
+    }
+
+    .live-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #5e9977;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
     .bars {
       display: flex;
       flex-direction: column;
       gap: 0.55rem;
-      margin-bottom: 1.25rem;
     }
 
     .bar-row {
@@ -196,7 +304,6 @@
       background: #e8efed;
       border-radius: 12px;
       overflow: hidden;
-      position: relative;
     }
 
     .bar-fill {
@@ -218,155 +325,228 @@
       text-align: right;
     }
 
-    /* ── Nav bar ── */
-    nav {
-      background: #ffffff;
-      border-top: 1px solid #cdd9d5;
-      padding: 10px 16px;
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 10;
-    }
-
-    .toggle-btn {
-      padding: 9px 20px;
-      border: 1.5px solid #cdd9d5;
-      border-radius: 99px;
-      background: transparent;
+    .empty-state {
+      text-align: center;
       color: #7a9990;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all .15s;
-      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 1.5rem 0;
     }
 
-    .toggle-btn:hover {
-      border-color: #5e9977;
-      color: #2e3d38;
-    }
-
-    .toggle-btn.on {
-      background: #5e9977;
-      border-color: #5e9977;
-      color: #fff;
-    }
-
-    /* ── Facilitator: clear button ── */
+    /* ── Clear button ── */
     .clear-btn {
       display: block;
       width: 100%;
-      padding: 16px;
-      border: none;
+      padding: 14px;
+      border: 1.5px solid #e8d4d4;
       border-radius: 12px;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
       transition: background .15s, transform .1s;
-      letter-spacing: .01em;
       background: #f5e8e8;
       color: #5a2020;
-      border: 1.5px solid #e8d4d4;
+      margin-top: 1.25rem;
     }
 
-    .clear-btn:hover {
-      background: #efdcdc;
+    .clear-btn:hover { background: #efdcdc; }
+    .clear-btn:active { transform: scale(.98); }
+
+    /* ── Participant results view ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
-    .clear-btn:active {
-      transform: scale(.98);
+    #participant-results {
+      animation: fadeUp 0.35s ease both;
     }
 
-    /* ── Empty state ── */
-    .empty {
-      flex: 1;
+    .contribution-badge {
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #7a9990;
+      gap: 0.6rem;
+      padding: 0.7rem 1.2rem;
+      border-radius: 99px;
       font-size: 0.9rem;
-      text-align: center;
-      padding: 2rem 0;
+      font-weight: 600;
+      align-self: center;
+    }
+
+    .contribution-badge .badge-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .cb5 { background: #c8e6d4; color: #1a4d30; }
+    .cb5 .badge-dot { background: #1a4d30; }
+    .cb4 { background: #d6eee0; color: #2a5c40; }
+    .cb4 .badge-dot { background: #2a5c40; }
+    .cb3 { background: #d6eaf0; color: #1e4a5a; }
+    .cb3 .badge-dot { background: #1e4a5a; }
+    .cb2 { background: #d0e4ef; color: #1a3d55; }
+    .cb2 .badge-dot { background: #1a3d55; }
+    .cb1 { background: #e8d6d6; color: #5a2020; }
+    .cb1 .badge-dot { background: #5a2020; }
+
+    .p-bar-row.mine .bar-track {
+      box-shadow: 0 0 0 2px #5e9977;
+    }
+
+    .p-bar-row.mine .bar-num {
+      color: #2e3d38;
+      font-weight: 700;
     }
   </style>
 </head>
 <body>
 
-<!-- ────────────────── PARTICIPANT VIEW ────────────────── -->
-<div id="participant-view" class="view active">
-  <div class="header">
-    <h1>How's your energy?</h1>
-    <p>Tap a number to check in</p>
-  </div>
+<div class="facilitator-badge">Facilitator view</div>
 
-  <div class="energy-grid" id="energy-grid">
-    <button class="energy-btn e5" onclick="submitRating(5)">
-      <span class="num">5</span>
-      <span class="label">Buzzing — full energy</span>
-    </button>
-    <button class="energy-btn e4" onclick="submitRating(4)">
-      <span class="num">4</span>
-      <span class="label">Good — feeling engaged</span>
-    </button>
-    <button class="energy-btn e3" onclick="submitRating(3)">
-      <span class="num">3</span>
-      <span class="label">Okay — steady, middle ground</span>
-    </button>
-    <button class="energy-btn e2" onclick="submitRating(2)">
-      <span class="num">2</span>
-      <span class="label">Low — a bit flat</span>
-    </button>
-    <button class="energy-btn e1" onclick="submitRating(1)">
-      <span class="num">1</span>
-      <span class="label">Empty — really tired</span>
-    </button>
-  </div>
+<!-- ────────────────── PARTICIPANT PAGE ────────────────── -->
+<div id="participant-page" class="page">
+  <div class="panel">
 
-  <div class="thankyou" id="thankyou">
-    <div class="check-circle">✓</div>
-    <h2>Checked in!</h2>
-    <p>Pass the device to the next person</p>
-  </div>
+    <!-- Input -->
+    <div id="participant-input">
+      <div class="header">
+        <h1>How's your energy?</h1>
+        <p>Tap a number to check in</p>
+      </div>
+      <div style="margin-top: 1.5rem;">
+        <div class="energy-grid">
+          <button class="energy-btn e5" onclick="submitRating(5)">
+            <span class="num">5</span><span class="label">Buzzing — full energy</span>
+          </button>
+          <button class="energy-btn e4" onclick="submitRating(4)">
+            <span class="num">4</span><span class="label">Good — feeling engaged</span>
+          </button>
+          <button class="energy-btn e3" onclick="submitRating(3)">
+            <span class="num">3</span><span class="label">Okay — steady, middle ground</span>
+          </button>
+          <button class="energy-btn e2" onclick="submitRating(2)">
+            <span class="num">2</span><span class="label">Low — a bit flat</span>
+          </button>
+          <button class="energy-btn e1" onclick="submitRating(1)">
+            <span class="num">1</span><span class="label">Empty — really tired</span>
+          </button>
+        </div>
+      </div>
+    </div>
 
+    <!-- Results (shown after submitting) -->
+    <div id="participant-results" style="display:none; flex-direction:column; gap:1.5rem;">
+
+      <div id="p-contribution-badge" class="contribution-badge"></div>
+
+      <div class="header">
+        <h1>Here's where the group is</h1>
+        <p id="p-total-label">Loading…</p>
+      </div>
+
+      <div class="card">
+        <div class="avg-row">
+          <div class="avg-label">Group average</div>
+          <div class="avg-num" id="p-avg-display">—</div>
+          <div class="avg-meta">out of 5</div>
+        </div>
+        <div class="live-row">
+          <div class="live-dot"></div>
+          <span class="live-label">Live</span>
+        </div>
+        <div class="bars" id="p-bars"></div>
+      </div>
+
+    </div>
+
+  </div>
 </div>
 
-<!-- ────────────────── FACILITATOR VIEW ────────────────── -->
-<div id="facilitator-view" class="view">
-  <div class="header">
-    <h1>Room Energy</h1>
-    <p id="total-label">No responses yet</p>
+<!-- ────────────────── FACILITATOR PAGE ────────────────── -->
+<div id="facilitator-page" class="page">
+  <div class="panel">
+
+    <!-- QR code -->
+    <div class="card qr-card">
+      <div class="qr-inner">
+        <div class="qr-code-wrap" id="qr-container"></div>
+        <div class="qr-caption">
+          <strong>Scan to check in</strong>
+          <span id="qr-url-label"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Facilitator's own input -->
+    <div>
+      <div class="header" style="margin-bottom:1.25rem;">
+        <h1>How's your energy?</h1>
+        <p>Your check-in</p>
+      </div>
+      <div class="energy-grid" id="facilitator-input-grid">
+        <button class="energy-btn e5" onclick="submitRating(5)">
+          <span class="num">5</span><span class="label">Buzzing — full energy</span>
+        </button>
+        <button class="energy-btn e4" onclick="submitRating(4)">
+          <span class="num">4</span><span class="label">Good — feeling engaged</span>
+        </button>
+        <button class="energy-btn e3" onclick="submitRating(3)">
+          <span class="num">3</span><span class="label">Okay — steady, middle ground</span>
+        </button>
+        <button class="energy-btn e2" onclick="submitRating(2)">
+          <span class="num">2</span><span class="label">Low — a bit flat</span>
+        </button>
+        <button class="energy-btn e1" onclick="submitRating(1)">
+          <span class="num">1</span><span class="label">Empty — really tired</span>
+        </button>
+      </div>
+      <div class="thankyou" id="thankyou-facilitator">
+        <div class="check-circle">✓</div>
+        <h2>Checked in!</h2>
+        <p>Results updated</p>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="card">
+      <div class="avg-row">
+        <div class="avg-label">Group average</div>
+        <div class="avg-num" id="avg-display">—</div>
+        <div class="avg-meta" id="total-label">No responses yet</div>
+      </div>
+      <div class="live-row">
+        <div class="live-dot"></div>
+        <span class="live-label">Live</span>
+      </div>
+      <div id="spread-section">
+        <div class="bars" id="bars"></div>
+      </div>
+      <div class="empty-state" id="empty-msg" style="display:none">Responses will appear here</div>
+      <button class="clear-btn" onclick="clearAll()">Clear all responses</button>
+    </div>
+
   </div>
-
-  <div class="avg-card">
-    <div class="avg-label">Average</div>
-    <div class="avg-num" id="avg-display">—</div>
-    <div class="avg-meta">out of 5</div>
-  </div>
-
-  <div id="spread-section">
-    <div style="font-size:11px; font-weight:700; color:#7a9990; letter-spacing:.07em; text-transform:uppercase; margin-bottom:12px">Response spread</div>
-    <div class="bars" id="bars"></div>
-  </div>
-  <div class="empty" id="empty-msg">Responses will appear here</div>
-
-  <button class="clear-btn" onclick="clearAll()">Clear all responses</button>
-
 </div>
-
-<nav>
-  <button class="toggle-btn on" id="nav-participant" onclick="switchView('participant')">Participant</button>
-  <button class="toggle-btn"    id="nav-facilitator" onclick="switchView('facilitator')">Facilitator</button>
-</nav>
 
 <script>
   const KEY = 'workshop_energy_v1';
 
+  const params = new URLSearchParams(window.location.search);
+  const isFacilitator = params.get('facilitator') === '1234';
+  const participantUrl = window.location.origin + window.location.pathname;
+
+  const RATING_LABELS = {
+    5: 'You checked in at 5 — buzzing',
+    4: 'You checked in at 4 — good energy',
+    3: 'You checked in at 3 — steady',
+    2: 'You checked in at 2 — a bit flat',
+    1: 'You checked in at 1 — tired'
+  };
+
+  // ── Data helpers ──
   function getCounts() {
     try {
       const data = JSON.parse(localStorage.getItem(KEY));
@@ -379,38 +559,78 @@
     localStorage.setItem(KEY, JSON.stringify(c));
   }
 
+  // ── Submit ──
   function submitRating(level) {
     const counts = getCounts();
     counts[level] = (counts[level] || 0) + 1;
     saveCounts(counts);
 
-    const grid = document.getElementById('energy-grid');
-    const ty = document.getElementById('thankyou');
-    grid.style.display = 'none';
-    ty.classList.add('show');
-
-    setTimeout(() => {
-      ty.classList.remove('show');
-      grid.style.display = 'flex';
-    }, 2400);
+    if (isFacilitator) {
+      const grid = document.getElementById('facilitator-input-grid');
+      const ty = document.getElementById('thankyou-facilitator');
+      grid.style.display = 'none';
+      ty.classList.add('show');
+      renderFacilitator();
+      setTimeout(() => {
+        ty.classList.remove('show');
+        grid.style.display = 'flex';
+      }, 2400);
+    } else {
+      showParticipantResults(level);
+    }
   }
 
-  function switchView(view) {
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById(view + '-view').classList.add('active');
-    document.getElementById('nav-participant').classList.toggle('on', view === 'participant');
-    document.getElementById('nav-facilitator').classList.toggle('on', view === 'facilitator');
-    if (view === 'facilitator') renderFacilitator();
+  // ── Participant results ──
+  function showParticipantResults(myRating) {
+    document.getElementById('participant-input').style.display = 'none';
+
+    const results = document.getElementById('participant-results');
+    results.style.display = 'flex';
+
+    const badge = document.getElementById('p-contribution-badge');
+    badge.className = 'contribution-badge cb' + myRating;
+    badge.innerHTML = `<span class="badge-dot"></span>${RATING_LABELS[myRating]}`;
+
+    renderParticipantResults(myRating);
+
+    window.addEventListener('storage', (e) => {
+      if (e.key === KEY) renderParticipantResults(myRating);
+    });
+    setInterval(() => renderParticipantResults(myRating), 3000);
   }
 
+  function renderParticipantResults(myRating) {
+    const counts = getCounts();
+    let total = 0, sum = 0;
+    for (let i = 1; i <= 5; i++) { total += counts[i]; sum += i * counts[i]; }
+
+    document.getElementById('p-total-label').textContent =
+      total === 1 ? '1 person has checked in' : `${total} people have checked in`;
+
+    document.getElementById('p-avg-display').textContent =
+      total === 0 ? '—' : (sum / total).toFixed(1);
+
+    const barsEl = document.getElementById('p-bars');
+    const maxCount = Math.max(...Object.values(counts), 1);
+    barsEl.innerHTML = '';
+    for (let i = 5; i >= 1; i--) {
+      const count = counts[i];
+      const row = document.createElement('div');
+      row.className = 'bar-row p-bar-row' + (i === myRating ? ' mine' : '');
+      row.innerHTML = `
+        <span class="bar-num">${i}</span>
+        <div class="bar-track"><div class="bar-fill bf${i}" style="width:${(count / maxCount) * 100}%"></div></div>
+        <span class="bar-count">${count}</span>
+      `;
+      barsEl.appendChild(row);
+    }
+  }
+
+  // ── Facilitator results ──
   function renderFacilitator() {
     const counts = getCounts();
-
     let total = 0, sum = 0;
-    for (let i = 1; i <= 5; i++) {
-      total += counts[i];
-      sum += i * counts[i];
-    }
+    for (let i = 1; i <= 5; i++) { total += counts[i]; sum += i * counts[i]; }
 
     document.getElementById('total-label').textContent =
       total === 0 ? 'No responses yet' :
@@ -421,13 +641,12 @@
 
     const bars = document.getElementById('bars');
     const emptyMsg = document.getElementById('empty-msg');
-
     const spreadSection = document.getElementById('spread-section');
 
     if (total === 0) {
       bars.innerHTML = '';
       spreadSection.style.display = 'none';
-      emptyMsg.style.display = 'flex';
+      emptyMsg.style.display = 'block';
       return;
     }
 
@@ -436,17 +655,13 @@
 
     const maxCount = Math.max(...Object.values(counts), 1);
     bars.innerHTML = '';
-
     for (let i = 5; i >= 1; i--) {
       const count = counts[i];
-      const pct = (count / maxCount) * 100;
       const row = document.createElement('div');
       row.className = 'bar-row';
       row.innerHTML = `
         <span class="bar-num">${i}</span>
-        <div class="bar-track">
-          <div class="bar-fill bf${i}" style="width: ${pct}%"></div>
-        </div>
+        <div class="bar-track"><div class="bar-fill bf${i}" style="width:${(count / maxCount) * 100}%"></div></div>
         <span class="bar-count">${count}</span>
       `;
       bars.appendChild(row);
@@ -458,6 +673,37 @@
     saveCounts({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
     renderFacilitator();
   }
+
+  // ── QR code ──
+  function generateQR() {
+    document.getElementById('qr-url-label').textContent = participantUrl;
+    new QRCode(document.getElementById('qr-container'), {
+      text: participantUrl,
+      width: 180,
+      height: 180,
+      colorDark: '#2e3d38',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  }
+
+  // ── Init ──
+  function init() {
+    if (isFacilitator) {
+      document.body.classList.add('facilitator-mode');
+      document.getElementById('facilitator-page').classList.add('active');
+      renderFacilitator();
+      generateQR();
+      window.addEventListener('storage', (e) => {
+        if (e.key === KEY) renderFacilitator();
+      });
+      setInterval(renderFacilitator, 3000);
+    } else {
+      document.getElementById('participant-page').classList.add('active');
+    }
+  }
+
+  init();
 </script>
 </body>
 </html>
