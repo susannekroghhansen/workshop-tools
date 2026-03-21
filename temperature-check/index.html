@@ -554,14 +554,6 @@
     <!-- Suggested moves (facilitator-only; shown when polarised or low average) -->
     <div id="f-moves-wrap" style="display:none; flex-direction:column; gap:16px">
 
-      <div class="card" style="padding-bottom:14px">
-        <div class="api-bar">
-          <label for="moves-api-key">Anthropic API key</label>
-          <input type="password" id="moves-api-key" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
-          <span class="api-note">Not stored anywhere</span>
-        </div>
-      </div>
-
       <div class="moves-card" id="f-moves-card">
         <span class="moves-label">Suggested moves</span>
         <div id="f-moves-body">
@@ -947,7 +939,6 @@
   }
 
   function fetchSuggestedMoves(question, rs, avg, exclude) {
-    const apiKey    = document.getElementById('moves-api-key').value.trim();
     const loadingEl = document.getElementById('f-moves-loading');
     const errorEl   = document.getElementById('f-moves-error');
     const listEl    = document.getElementById('f-moves-list');
@@ -956,14 +947,6 @@
     errorEl.style.display  = 'none';
     listEl.innerHTML       = '';
     retryEl.style.display  = 'none';
-
-    if (!apiKey) {
-      errorEl.textContent = 'Enter your Anthropic API key above to generate suggestions.';
-      errorEl.style.display = 'block';
-      // Reset key so it retries when focus returns after entering the key
-      movesLastKey = null;
-      return;
-    }
 
     loadingEl.style.display = 'flex';
 
@@ -991,17 +974,10 @@ Suggest 2–3 concrete facilitation interventions the facilitator could try righ
 Return ONLY a JSON array. No prose, no markdown fences. Each element:
 {"name": "Short name (3–5 words)", "action": "One sentence describing exactly what to do."}`;
 
-    fetch('https://api.anthropic.com/v1/messages', {
+    fetch('https://workshop-tools-api.onrender.com/api/claude', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 512,
         messages: [{ role: 'user', content: prompt }]
       })
     })
@@ -1081,11 +1057,6 @@ Return ONLY a JSON array. No prose, no markdown fences. Each element:
     if (e.key === 'Enter') doWordSubmit();
   });
 
-  // Re-trigger suggestions when the API key is entered
-  document.getElementById('moves-api-key').addEventListener('change', () => {
-    movesLastKey = null;
-    if (curView === 'facilitator') renderFacilitator();
-  });
 
   // ── dev test mode ──────────────────────────────────────────
   if (new URLSearchParams(location.search).has('test')) {

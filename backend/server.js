@@ -1,12 +1,22 @@
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const Anthropic = require('@anthropic-ai/sdk');
 
 const app = express();
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-app.use(cors());
+const limiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests — you have exceeded 20 requests per hour. Please try again later.' },
+});
+
+app.use(cors({ origin: 'https://susannekroghhansen.github.io' }));
 app.use(express.json());
+app.use('/api/claude', limiter);
 
 app.post('/api/claude', async (req, res) => {
   const { messages, system } = req.body;

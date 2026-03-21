@@ -335,13 +335,6 @@
     <p>Paste your sticky notes, find the themes in seconds.</p>
   </div>
 
-  <!-- API key -->
-  <div class="api-bar">
-    <label for="api-key">Anthropic API key</label>
-    <input type="password" id="api-key" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
-    <span class="api-note">Not stored anywhere</span>
-  </div>
-
   <!-- Input -->
   <div class="section">
     <div class="section-label">Step 1 — Paste your sticky notes</div>
@@ -377,7 +370,6 @@ Cross-team communication gaps"
 
 <script>
   function findThemes() {
-    const apiKey = document.getElementById('api-key').value.trim();
     const notes  = document.getElementById('notes-input').value.trim();
 
     const errorEl   = document.getElementById('error-msg');
@@ -386,10 +378,6 @@ Cross-team communication gaps"
 
     errorEl.classList.remove('visible');
 
-    if (!apiKey) {
-      showError('Please enter your Anthropic API key at the top of the page.');
-      return;
-    }
     if (!notes) {
       showError('Please paste some sticky notes before finding themes.');
       return;
@@ -425,17 +413,10 @@ Return your answer ONLY as a JSON array. No prose, no markdown fences — just t
 Here are the sticky notes, one per line:
 ${lines.map(l => `- ${l}`).join('\n')}`;
 
-    fetch('https://api.anthropic.com/v1/messages', {
+    fetch('https://workshop-tools-api.onrender.com/api/claude', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2048,
         messages: [{ role: 'user', content: prompt }]
       })
     })
