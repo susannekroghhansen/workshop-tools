@@ -305,6 +305,117 @@
       padding: 0 30px;
     }
 
+    /* ── API key bar ── */
+    .api-bar {
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+      margin-bottom: 0;
+      flex-wrap: wrap;
+    }
+
+    .api-bar label {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .api-bar input {
+      flex: 1;
+      min-width: 160px;
+      border: none;
+      border-bottom: 1.5px solid var(--border);
+      outline: none;
+      font-size: 0.82rem;
+      font-family: 'Menlo', 'Consolas', monospace;
+      color: var(--text);
+      background: transparent;
+      padding: 0.1rem 0.1rem 0.25rem;
+      transition: border-color 0.15s;
+    }
+
+    .api-bar input:focus { border-bottom-color: var(--blue); }
+
+    .api-bar input::placeholder { color: var(--border); }
+
+    .api-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    /* ── Suggested moves ── */
+    .moves-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .moves-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .move-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 12px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .move-item:first-of-type { border-top: none; padding-top: 0; }
+
+    .move-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .move-desc {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .moves-loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--muted);
+      padding: 4px 0;
+    }
+
+    .moves-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .moves-error {
+      font-size: 13px;
+      color: #7a3a3a;
+      background: #fce8e8;
+      border: 1px solid #f0c4c4;
+      border-radius: 8px;
+      padding: 10px 12px;
+      line-height: 1.5;
+    }
+
     /* ── Confirmed ── */
     .confirmed {
       text-align: center;
@@ -345,6 +456,8 @@
     </div>
 
     <button class="btn btn-blue" id="activate-btn" onclick="activateQ()">Activate question</button>
+
+    <button class="btn" id="test-btn" onclick="injectTestResponses()" style="display:none; background:#f0f4f2; color:var(--muted); border:1.5px dashed var(--border); font-size:13px; padding:11px">⚗️ Inject polarised responses (dev)</button>
 
     <div class="card" id="active-card" style="display:none">
       <div class="status-bar">
@@ -432,6 +545,31 @@
           <span>not at all</span>
           <span>completely</span>
         </div>
+      </div>
+
+      <!-- Suggested moves (shown only when polarised or low average) -->
+      <div id="r-moves-wrap" style="display:none; flex-direction:column; gap:16px">
+
+        <div class="card" style="padding-bottom:14px">
+          <div class="api-bar">
+            <label for="moves-api-key">Anthropic API key</label>
+            <input type="password" id="moves-api-key" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
+            <span class="api-note">Not stored anywhere</span>
+          </div>
+        </div>
+
+        <div class="moves-card" id="r-moves-card">
+          <span class="moves-label">Suggested moves</span>
+          <div id="r-moves-body">
+            <div class="moves-loading" id="r-moves-loading" style="display:none">
+              <div class="moves-spinner"></div>
+              <span>Generating suggestions…</span>
+            </div>
+            <div class="moves-error" id="r-moves-error" style="display:none"></div>
+            <div id="r-moves-list"></div>
+          </div>
+        </div>
+
       </div>
 
     </div>
@@ -565,6 +703,16 @@
   }
 
   // ── results ────────────────────────────────────────────────
+  let movesLastKey = null; // tracks which question+condition combo we last fetched for
+
+  function isPolarised(rs) {
+    if (rs.length < 4) return false;
+    const low  = rs.filter(r => r <= 2).length;
+    const high = rs.filter(r => r >= 4).length;
+    const threshold = Math.ceil(rs.length * 0.25);
+    return low >= threshold && high >= threshold;
+  }
+
   function renderResults() {
     const s = st();
     const empty   = document.getElementById('r-empty');
@@ -576,8 +724,9 @@
     document.getElementById('r-q-text').textContent = s.q;
 
     const rs = s.rs, n = rs.length;
-    document.getElementById('r-avg').textContent =
-      n ? (rs.reduce((a, b) => a + b, 0) / n).toFixed(1) : '—';
+    const avg = n ? rs.reduce((a, b) => a + b, 0) / n : null;
+
+    document.getElementById('r-avg').textContent = avg !== null ? avg.toFixed(1) : '—';
     document.getElementById('r-count').textContent =
       n ? n + (n === 1 ? ' response' : ' responses') : 'No responses yet';
 
@@ -596,6 +745,116 @@
           <span class="bar-ct">${c}</span>
         </div>`;
     }).join('');
+
+    // Decide whether to show Suggested moves
+    const movesWrap = document.getElementById('r-moves-wrap');
+    const needsMoves = n >= 2 && avg !== null && (isPolarised(rs) || avg < 3);
+
+    if (!needsMoves) {
+      movesWrap.style.display = 'none';
+      movesLastKey = null;
+      return;
+    }
+
+    movesWrap.style.display = 'flex';
+
+    // Build a key so we only call the API once per distinct situation
+    const conditionKey = s.qid + '|' + (isPolarised(rs) ? 'polarised' : 'low') + '|' + avg.toFixed(1);
+    if (conditionKey === movesLastKey) return; // already fetched for this state
+    movesLastKey = conditionKey;
+
+    fetchSuggestedMoves(s.q, rs, avg);
+  }
+
+  function fetchSuggestedMoves(question, rs, avg) {
+    const apiKey = document.getElementById('moves-api-key').value.trim();
+    const loadingEl = document.getElementById('r-moves-loading');
+    const errorEl   = document.getElementById('r-moves-error');
+    const listEl    = document.getElementById('r-moves-list');
+
+    errorEl.style.display  = 'none';
+    listEl.innerHTML       = '';
+
+    if (!apiKey) {
+      errorEl.textContent = 'Enter your Anthropic API key above to generate suggestions.';
+      errorEl.style.display = 'block';
+      // Reset key so it retries when focus returns after entering the key
+      movesLastKey = null;
+      return;
+    }
+
+    loadingEl.style.display = 'flex';
+
+    const polarised = isPolarised(rs);
+    const situation = polarised
+      ? `The group is polarised — scores are split between high and low (average ${avg.toFixed(1)}/5).`
+      : `The group has a low average score of ${avg.toFixed(1)}/5.`;
+
+    const distribution = [1,2,3,4,5]
+      .map(v => `${v}: ${rs.filter(r => r === v).length}`)
+      .join(', ');
+
+    const prompt = `You are an experienced workshop facilitator. A temperature-check question has just revealed a problem in the room.
+
+Question asked: "${question}"
+Score distribution (1–5 scale): ${distribution}
+Situation: ${situation}
+
+Suggest 2–3 concrete facilitation interventions the facilitator could try right now to address this. Each should be something that can be done in the next 5–10 minutes.
+
+Return ONLY a JSON array. No prose, no markdown fences. Each element:
+{"name": "Short name (3–5 words)", "action": "One sentence describing exactly what to do."}`;
+
+    fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 512,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    })
+    .then(res => {
+      if (!res.ok) return res.json().then(b => { throw new Error(b.error?.message || `API error ${res.status}`); });
+      return res.json();
+    })
+    .then(data => {
+      const raw = data.content?.[0]?.text || '';
+      let moves;
+      try {
+        const cleaned = raw.replace(/^```[\w]*\n?/, '').replace(/\n?```$/, '').trim();
+        moves = JSON.parse(cleaned);
+      } catch (_) {
+        throw new Error('Could not parse the response. Please try again.');
+      }
+      if (!Array.isArray(moves) || moves.length === 0) throw new Error('Unexpected response. Please try again.');
+      listEl.innerHTML = moves.map(m => `
+        <div class="move-item">
+          <span class="move-name">${escapeHtml(m.name)}</span>
+          <span class="move-desc">${escapeHtml(m.action)}</span>
+        </div>`).join('');
+    })
+    .catch(err => {
+      errorEl.textContent = err.message;
+      errorEl.style.display = 'block';
+      movesLastKey = null; // allow retry
+    })
+    .finally(() => {
+      loadingEl.style.display = 'none';
+    });
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   // ── utils ──────────────────────────────────────────────────
@@ -618,6 +877,31 @@
     if (curView === 'results')     renderResults();
     if (curView === 'facilitator') renderFacilitator();
   }, 2000);
+
+  // Re-trigger suggestions when the API key is entered
+  document.getElementById('moves-api-key').addEventListener('change', () => {
+    movesLastKey = null;
+    if (curView === 'results') renderResults();
+  });
+
+  // ── dev test mode ──────────────────────────────────────────
+  if (new URLSearchParams(location.search).has('test')) {
+    document.getElementById('test-btn').style.display = 'block';
+  }
+
+  function injectTestResponses() {
+    const s = st();
+    if (!s.on || !s.q) {
+      alert('Activate a question first, then inject test responses.');
+      return;
+    }
+    // Polarised spread: four 1s and four 5s
+    const testResponses = [1, 1, 1, 1, 5, 5, 5, 5];
+    localStorage.setItem(K.R, JSON.stringify(testResponses));
+    movesLastKey = null;
+    renderAll();
+    go('results');
+  }
 
   // ── boot ───────────────────────────────────────────────────
   renderAll();
