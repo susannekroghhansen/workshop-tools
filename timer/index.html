@@ -359,18 +359,6 @@
       letter-spacing: 0.02em;
     }
 
-    /* ── Back to toolkit link ── */
-    .back-link {
-      position: fixed;
-      top: 14px;
-      left: 16px;
-      font-size: 11px;
-      color: var(--muted);
-      text-decoration: none;
-      z-index: 20;
-    }
-    .back-link:hover { color: var(--green); }
-
     /* ── Facilitator badge ── */
     .facilitator-badge {
       position: fixed;
@@ -457,6 +445,7 @@
 
   <!-- TAB: Facilitator view -->
   <div id="fac-facilitator" class="fac-tab on">
+    <a href="../index.html" style="display:inline-flex; align-items:center; gap:5px; font-size:13px; color:#7a9990; text-decoration:none; margin-bottom:4px;">← Back to toolkit</a>
     <div class="logo">⏱️</div>
     <h1>Timer</h1>
     <p class="subtitle">Set a countdown for your workshop</p>
@@ -869,13 +858,6 @@
   function init() {
     if (IS_FACILITATOR && sessionId) {
       showView('view-facilitator');
-
-      // Add back to toolkit link
-      const backLink = document.createElement('a');
-      backLink.className = 'back-link';
-      backLink.href = 'https://susannekroghhansen.github.io/workshop-tools/';
-      backLink.textContent = '← Toolkit';
-      document.body.appendChild(backLink);
 
       // Add facilitator badge
       const badge = document.createElement('div');
