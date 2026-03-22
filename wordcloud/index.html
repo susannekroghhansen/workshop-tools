@@ -598,6 +598,7 @@
       wcSnapshotCount++;
       if (doc.exists) {
         const d = doc.data();
+        console.log('[WC] Snapshot #' + wcSnapshotCount + ' — raw data:', JSON.stringify(d));
         cachedState = {
           q:      d.q      || '',
           qid:    d.qid    || '',
@@ -721,7 +722,7 @@
 
     console.log('[WC] Writing to wc_sessions/' + sessionId, update);
     try {
-      await sessionRef().set(update, { merge: true });
+      await sessionRef().update(update);
       // Show confirmation
       document.getElementById('p-form').style.display = 'none';
       document.getElementById('p-done').style.display = 'block';
