@@ -1245,6 +1245,9 @@ Return ONLY a JSON array. No prose, no markdown fences. Each element:
       }
     } else if (IS_RESULTS) {
       renderResultsMode();
+    } else {
+      // Participant: poll so the question appears immediately if set before page load
+      renderParticipantMode();
     }
   }, 2000);
 
