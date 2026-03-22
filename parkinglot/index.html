@@ -48,44 +48,10 @@
       line-height: 1.5;
     }
 
-    /* ── Nav ── */
-    nav {
-      background: var(--card);
-      border-top: 1px solid var(--border);
-      padding: 10px 16px;
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 10;
-    }
-
-    .tab {
-      padding: 9px 20px;
-      border: 1.5px solid var(--border);
-      border-radius: 99px;
-      background: transparent;
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all .15s;
-      font-family: inherit;
-    }
-
-    .tab.on {
-      background: var(--green);
-      border-color: var(--green);
-      color: #fff;
-    }
-
     /* ── Views ── */
     main {
       flex: 1;
-      padding: 2rem 1.25rem 5rem;
+      padding: 2rem 1.25rem 2rem;
       max-width: 560px;
       margin: 0 auto;
       width: 100%;
@@ -106,13 +72,6 @@
       font-size: 16px;
       font-weight: 600;
       margin-bottom: 4px;
-    }
-
-    .card-sub {
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 16px;
-      line-height: 1.5;
     }
 
     /* ── Field label ── */
@@ -226,6 +185,37 @@
     .empty-icon { font-size: 40px; margin-bottom: 12px; }
     .empty-msg  { color: var(--muted); font-size: 16px; line-height: 1.5; }
 
+    /* ── QR card ── */
+    .qr-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px 22px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .qr-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .qr-card img {
+      border-radius: 8px;
+    }
+
+    .qr-url {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      word-break: break-all;
+    }
+
     /* ── Parking lot cards ── */
     .lot-section-label {
       font-size: 11px;
@@ -256,11 +246,6 @@
       font-size: 15px;
       line-height: 1.55;
       color: var(--text);
-    }
-
-    .lot-card-meta {
-      font-size: 12px;
-      color: var(--muted);
     }
 
     .lot-card-actions {
@@ -317,27 +302,6 @@
       color: #1e4a5a;
     }
 
-    .lot-card-status {
-      font-size: 12px;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 99px;
-      display: inline-block;
-      align-self: flex-start;
-    }
-
-    .status-comeback {
-      background: #edf8f2;
-      color: #2a5c40;
-      border: 1px solid #c8e6d4;
-    }
-
-    .status-covered {
-      background: #d6eaf0;
-      color: #1e4a5a;
-      border: 1px solid #8ab8cc;
-    }
-
     /* ── Count summary ── */
     .lot-summary {
       display: flex;
@@ -365,7 +329,7 @@
 <main>
 
   <!-- ── PARTICIPANT VIEW ── -->
-  <div class="view on" id="v-participant">
+  <div class="view" id="v-participant">
 
     <a href="../index.html" style="display:inline-flex; align-items:center; gap:5px; font-size:13px; color:var(--muted); text-decoration:none; margin-bottom:4px;">← Back to toolkit</a>
 
@@ -374,7 +338,7 @@
       <p>Don't lose that thought — park it here.<br>The facilitator will make sure it gets addressed.</p>
     </div>
 
-    <div id="p-form">
+    <div id="p-form" style="display:flex; flex-direction:column; gap:16px">
       <div class="card">
         <span class="field-label">Your question or topic</span>
         <textarea id="p-input" maxlength="280" placeholder="e.g. What happens when a team member leaves mid-sprint?" oninput="onInput()"></textarea>
@@ -406,17 +370,17 @@
       <p id="fac-summary-text">Submissions will appear here</p>
     </div>
 
-    <div id="f-qr-card" class="card" style="display:none">
-      <div style="display:flex; flex-direction:column; align-items:center; gap:10px; padding:8px 0">
-        <img id="f-qr-img" width="160" height="160" style="border-radius:8px;" alt="Participant QR code">
-        <p id="f-qr-url" style="font-size:12px; color:var(--muted); text-align:center; word-break:break-all"></p>
-      </div>
+    <!-- QR code — always visible at top -->
+    <div class="qr-card" id="f-qr-card">
+      <span class="qr-label">Scan to submit</span>
+      <img id="f-qr-img" width="180" height="180" alt="Participant QR code">
+      <p id="f-qr-url" class="qr-url"></p>
     </div>
 
     <div id="fac-empty" class="card">
       <div class="empty">
         <div class="empty-icon">🅿️</div>
-        <p class="empty-msg">Nothing parked yet.<br>Participants can add items from the Submit tab.</p>
+        <p class="empty-msg">Nothing parked yet.<br>Participants scan the QR code above to submit.</p>
       </div>
     </div>
 
@@ -445,17 +409,24 @@
 
   </div>
 
-</main>
+  <!-- ── NO SESSION VIEW ── -->
+  <div class="view" id="v-nosession">
+    <a href="../index.html" style="display:inline-flex; align-items:center; gap:5px; font-size:13px; color:var(--muted); text-decoration:none; margin-bottom:4px;">← Back to toolkit</a>
+    <div class="header">
+      <h1>Parking Lot</h1>
+    </div>
+    <div class="card">
+      <div class="empty">
+        <div class="empty-icon" style="font-size:32px">🔗</div>
+        <p class="empty-msg">No session found.<br>Please scan the QR code<br>from the facilitator's screen.</p>
+      </div>
+    </div>
+  </div>
 
-<nav>
-  <button class="tab on" id="t-participant" onclick="go('participant')">Submit</button>
-  <button class="tab"    id="t-facilitator" onclick="go('facilitator')">Facilitator</button>
-</nav>
+</main>
 
 <script>
   // ── Firebase Setup ───────────────────────────────────────────
-  // Same Firebase project as temperature-check — replace with your config.
-  // See temperature-check/index.html for setup instructions.
   const firebaseConfig = {
     apiKey:            "AIzaSyBzc_CmZhahAyUNLcGL0vbP25Nj_qBMe7M",
     authDomain:        "workshop-tools-ff457.firebaseapp.com",
@@ -467,7 +438,7 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
-  // ── Session ID ──────────────────────────────────────────────
+  // ── Routing ──────────────────────────────────────────────────
   const params = new URLSearchParams(location.search);
   const IS_FACILITATOR = params.get('facilitator') === '1234';
 
@@ -485,6 +456,13 @@
     return db.collection('pl_sessions').doc(sessionId);
   }
 
+  // ── Show the right view ──────────────────────────────────────
+  function showView(name) {
+    ['participant', 'facilitator', 'nosession'].forEach(n => {
+      document.getElementById('v-' + n).classList.toggle('on', n === name);
+    });
+  }
+
   // ── Cached items (updated by Firestore onSnapshot) ──────────
   let cachedItems = [];
 
@@ -493,9 +471,7 @@
     if (!sessionId) return;
     sessionRef().onSnapshot(doc => {
       cachedItems = doc.exists ? (doc.data().items || []) : [];
-      if (document.getElementById('v-facilitator').classList.contains('on')) {
-        renderFacilitator();
-      }
+      if (IS_FACILITATOR) renderFacilitator();
     }, err => console.error('Firestore error:', err));
   }
 
@@ -504,7 +480,7 @@
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  // ── participant ────────────────────────────────────────────
+  // ── Participant ──────────────────────────────────────────────
   function onInput() {
     const val = document.getElementById('p-input').value;
     const len = val.length;
@@ -517,7 +493,12 @@
   async function submitItem() {
     const text = document.getElementById('p-input').value.trim();
     if (!text || !sessionId) return;
-    const newItem = { id: Date.now().toString() + Math.random().toString(36).slice(2,5), text, status: 'open', ts: Date.now() };
+    const newItem = {
+      id: Date.now().toString() + Math.random().toString(36).slice(2, 5),
+      text,
+      status: 'open',
+      ts: Date.now()
+    };
     await sessionRef().set(
       { items: firebase.firestore.FieldValue.arrayUnion(newItem) },
       { merge: true }
@@ -532,11 +513,10 @@
     document.getElementById('char-count').classList.remove('warn');
     document.getElementById('submit-btn').disabled = true;
     document.getElementById('p-form').style.display = 'flex';
-    document.getElementById('p-form').style.flexDirection = 'column';
     document.getElementById('p-done').style.display = 'none';
   }
 
-  // ── facilitator ────────────────────────────────────────────
+  // ── Facilitator ──────────────────────────────────────────────
   async function setStatus(id, status) {
     const items = cachedItems.map(i => i.id === id ? { ...i, status: i.status === status ? 'open' : status } : i);
     await sessionRef().set({ items }, { merge: true });
@@ -551,7 +531,7 @@
     if (items.length === 0) {
       fEmpty.style.display = 'block';
       fContent.style.display = 'none';
-      summaryText.textContent = 'Submissions will appear here';
+      summaryText.textContent = 'Submissions will appear here in real time';
       return;
     }
 
@@ -614,44 +594,21 @@
   function showFacilitatorQR() {
     if (!sessionId) return;
     const participantUrl = `${PL_BASE_URL}?session=${sessionId}`;
-    const qrCard = document.getElementById('f-qr-card');
-    const qrImg  = document.getElementById('f-qr-img');
-    const qrUrl  = document.getElementById('f-qr-url');
-    if (!qrCard) return;
-    qrCard.style.display = 'block';
-    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(participantUrl)}&color=2e3d38&bgcolor=ffffff&margin=2`;
-    qrUrl.textContent = participantUrl;
+    document.getElementById('f-qr-img').src =
+      `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(participantUrl)}&color=2e3d38&bgcolor=ffffff&margin=2`;
+    document.getElementById('f-qr-url').textContent = participantUrl;
   }
 
-  // ── Participant: no session state ───────────────────────────
-  function showNoSession() {
-    const form = document.getElementById('p-form');
-    if (form) form.innerHTML = `
-      <div class="card">
-        <div class="empty">
-          <div class="empty-icon" style="font-size:32px">🔗</div>
-          <p class="empty-msg">No session found.<br>Please scan the QR code<br>from the facilitator's screen.</p>
-        </div>
-      </div>`;
+  // ── Boot ─────────────────────────────────────────────────────
+  if (IS_FACILITATOR) {
+    showView('facilitator');
+    showFacilitatorQR();
+    subscribeToSession();
+  } else if (sessionId) {
+    showView('participant');
+  } else {
+    showView('nosession');
   }
-
-  // ── navigation ─────────────────────────────────────────────
-  function go(v) {
-    ['participant', 'facilitator'].forEach(n => {
-      document.getElementById('v-' + n).classList.toggle('on', n === v);
-      document.getElementById('t-' + n).classList.toggle('on', n === v);
-    });
-    if (v === 'facilitator') {
-      renderFacilitator();
-      showFacilitatorQR();
-    }
-  }
-
-  // ── boot ───────────────────────────────────────────────────
-  if (!sessionId && !IS_FACILITATOR) showNoSession();
-  subscribeToSession();
-  if (IS_FACILITATOR) go('facilitator');
-  else renderFacilitator();
 </script>
 
 </body>
