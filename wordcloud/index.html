@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Word Cloud</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --bg:      #f4f7f6;
+      --card:    #ffffff;
+      --green:   #5e9977;
+      --green-dk:#4a7d61;
+      --red-txt: #5a2020;
+      --text:    #2e3d38;
+      --muted:   #7a9990;
+      --border:  #cdd9d5;
+      --shadow:  0 2px 14px rgba(0,0,0,0.06);
+      --radius:  14px;
+      --nav-h:   68px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    body.wc-mode { overflow: hidden; }
+
+    main {
+      flex: 1;
+      padding: 2rem 1.25rem 2rem;
+      max-width: 560px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Facilitator needs bottom padding for the fixed nav bar */
+    body.is-facilitator main { padding-bottom: calc(var(--nav-h) + 1.5rem); }
+
+    /* ── Views ── */
+    .view { display: none; flex-direction: column; gap: 16px; }
+    .view.on { display: flex; }
+
+    /* ── Facilitator tabs ── */
+    .fac-tab { display: none; flex-direction: column; gap: 16px; }
+    .fac-tab.on { display: flex; }
+
+    /* ── Word cloud full-screen tab ── */
+    #ft-wordcloud.on {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      bottom: var(--nav-h);
+      display: flex !important;
+      flex-direction: column;
+      background: var(--bg);
+      z-index: 10;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    /* ── Header ── */
+    .header { text-align: center; margin-bottom: 1.5rem; }
+    .header h1 { font-size: 1.55rem; font-weight: 600; letter-spacing: -0.02em; }
+    .header p  { margin-top: 0.35rem; font-size: 0.9rem; color: var(--muted); line-height: 1.5; }
+
+    /* ── Field label ── */
+    .field-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    /* ── Inputs ── */
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 16px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      transition: border-color .15s;
+      line-height: 1.5;
+    }
+
+    textarea { min-height: 80px; resize: vertical; }
+
+    input[type="text"]:focus,
+    textarea:focus { border-color: var(--green); }
+
+    /* ── Buttons ── */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background .15s, transform .1s;
+      letter-spacing: .01em;
+    }
+
+    .btn:active { transform: scale(.98); }
+    .btn-green  { background: var(--green);  color: #fff; }
+    .btn-green:hover { background: var(--green-dk); }
+    .btn-red    { background: #f5e8e8; color: var(--red-txt); border: 1.5px solid #e8d4d4; }
+    .btn-red:hover { background: #efdcdc; }
+    .btn:disabled { opacity: .38; cursor: default; pointer-events: none; }
+
+    /* ── Active question display ── */
+    .q-text {
+      font-size: 19px;
+      font-weight: 500;
+      line-height: 1.45;
+    }
+
+    /* ── Live dot ── */
+    .dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      margin-right: 6px;
+      animation: pulse 2.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+    /* ── Status bar ── */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    /* ── Confirmed state ── */
+    .confirmed { text-align: center; padding: 24px 0; }
+
+    .check-circle {
+      width: 58px; height: 58px;
+      background: var(--green);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+
+    .confirmed h2 { font-size: 20px; margin-bottom: 8px; }
+    .confirmed p  { font-size: 15px; color: var(--muted); line-height: 1.5; }
+
+    .add-more-btn {
+      margin-top: 20px;
+      padding: 10px 22px;
+      border: 1.5px solid var(--border);
+      border-radius: 99px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .15s;
+      font-family: inherit;
+    }
+
+    .add-more-btn:hover { border-color: var(--green); color: var(--text); }
+
+    /* ── Empty / waiting states ── */
+    .empty { text-align: center; padding: 40px 0; }
+    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-msg  { color: var(--muted); font-size: 16px; line-height: 1.5; }
+
+    /* ── QR card ── */
+    .qr-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px 22px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .qr-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .qr-card img { border-radius: 8px; }
+
+    .qr-url {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      word-break: break-all;
+    }
+
+    /* ── Facilitator badge ── */
+    .facilitator-badge {
+      position: fixed;
+      top: 12px; right: 14px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 4px 10px;
+      opacity: 0.7;
+      pointer-events: none;
+      z-index: 30;
+    }
+
+    /* ── Facilitator nav bar ── */
+    .facilitator-nav-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: var(--nav-h);
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      z-index: 20;
+    }
+
+    .nav-tab {
+      padding: 10px 18px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      color: var(--muted);
+      background: transparent;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+
+    .nav-tab:hover { background: var(--bg); color: var(--text); }
+
+    .nav-tab.active {
+      background: var(--green);
+      color: #fff;
+      border-color: var(--green);
+    }
+
+    /* ── Preview banner ── */
+    .preview-banner {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      color: var(--muted);
+      background: var(--card);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 8px 16px;
+    }
+
+    /* ── Active question chip on facilitator tab ── */
+    .active-q-chip {
+      background: #edf8f2;
+      border: 1.5px solid #c8e6d4;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: #2a5c40;
+      line-height: 1.5;
+    }
+
+    .active-q-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #5e9977;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    /* ── Word cloud projection ── */
+    .wc-question-strip {
+      padding: 12px 24px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+      flex-shrink: 0;
+    }
+
+    .wc-subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 400;
+      line-height: 1.4;
+    }
+
+    .wc-canvas-area {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #wc-svg { display: block; }
+
+    .wc-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 16px;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .wc-empty-icon { font-size: 48px; }
+
+    /* ── Waiting state (participant) ── */
+    .waiting-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 40px 0;
+      color: var(--muted);
+    }
+
+    .waiting-icon { font-size: 40px; margin-bottom: 4px; }
+
+    /* ── Word count hint ── */
+    .word-hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+  </style>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- d3 + d3-cloud for word cloud layout -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-cloud@1.2.7/build/d3.layout.cloud.min.js"></script>
+</head>
+<body>
+
+<main id="app-main">
+
+  <!-- ── PARTICIPANT VIEW ── -->
+  <div class="view" id="v-participant">
+
+    <a href="../index.html" style="display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--muted);text-decoration:none;margin-bottom:4px;">← Back to toolkit</a>
+
+    <div class="header">
+      <h1>Word Cloud</h1>
+      <p id="p-header-sub">Share a word that comes to mind.</p>
+    </div>
+
+    <!-- Waiting state (no active question) -->
+    <div class="card" id="p-waiting" style="display:none">
+      <div class="waiting-state">
+        <div class="waiting-icon">☁️</div>
+        <p>Waiting for the facilitator<br>to set a question…</p>
+      </div>
+    </div>
+
+    <!-- Active question + form -->
+    <div id="p-active" style="display:none;flex-direction:column;gap:16px">
+      <div class="card">
+        <div class="status-bar">
+          <span><span class="dot"></span>Live question</span>
+        </div>
+        <p class="q-text" id="p-question"></p>
+      </div>
+
+      <div id="p-form" style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <span class="field-label">Your word(s)</span>
+          <input type="text" id="p-input" placeholder="e.g. collaboration, focus" maxlength="120" oninput="onWordInput()" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <p class="word-hint">You can enter multiple words separated by commas or spaces.</p>
+        </div>
+        <button class="btn btn-green" id="p-submit-btn" onclick="submitWords()" disabled>Submit</button>
+      </div>
+
+      <div id="p-done" style="display:none">
+        <div class="card">
+          <div class="confirmed">
+            <div class="check-circle">✓</div>
+            <h2>Added to the cloud!</h2>
+            <p>Your words are now visible<br>on the facilitator's screen.</p>
+            <button class="add-more-btn" onclick="resetParticipantForm()">Add more words</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── FACILITATOR VIEW ── -->
+  <div class="view" id="v-facilitator">
+
+    <div class="facilitator-badge">Facilitator</div>
+
+    <!-- Tab 1: Facilitator view -->
+    <div class="fac-tab on" id="ft-fv">
+
+      <a href="../index.html" style="display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--muted);text-decoration:none;margin-bottom:4px;">← Back to toolkit</a>
+
+      <div class="header">
+        <h1>Word Cloud</h1>
+        <p>Share the QR code, then set a question to start collecting words.</p>
+      </div>
+
+      <!-- QR code -->
+      <div class="qr-card" id="f-qr-card">
+        <span class="qr-label">Scan to participate</span>
+        <img id="f-qr-img" width="180" height="180" alt="Participant QR code">
+        <p id="f-qr-url" class="qr-url"></p>
+      </div>
+
+      <!-- Active question indicator -->
+      <div id="f-active-q" style="display:none">
+        <div class="active-q-chip">
+          <span class="active-q-label">Active question</span>
+          <span id="f-active-q-text"></span>
+        </div>
+      </div>
+
+      <!-- Set question card -->
+      <div class="card">
+        <span class="field-label">Set question</span>
+        <textarea id="q-input" placeholder="e.g. In one word — what does great teamwork look like?" maxlength="200" rows="3"></textarea>
+        <button class="btn btn-green" onclick="setQuestion()" style="margin-top:12px">Set question &amp; reset cloud</button>
+      </div>
+
+      <!-- Clear -->
+      <button class="btn btn-red" id="f-clear-btn" onclick="clearSession()" style="display:none">Clear question &amp; all words</button>
+
+    </div>
+
+    <!-- Tab 2: Participant preview -->
+    <div class="fac-tab" id="ft-preview">
+      <div class="preview-banner">Preview — this is what participants see</div>
+      <div class="header">
+        <h1>Word Cloud</h1>
+        <p id="prev-header-sub">Share a word that comes to mind.</p>
+      </div>
+      <div class="card" id="prev-q-card" style="display:none">
+        <div class="status-bar">
+          <span><span class="dot"></span>Live question</span>
+        </div>
+        <p class="q-text" id="prev-question"></p>
+      </div>
+      <div class="card" id="prev-waiting-card" style="display:none">
+        <div class="waiting-state">
+          <div class="waiting-icon">☁️</div>
+          <p>Waiting for the facilitator<br>to set a question…</p>
+        </div>
+      </div>
+      <div class="card">
+        <span class="field-label">Your word(s)</span>
+        <input type="text" placeholder="e.g. collaboration, focus" disabled style="opacity:0.6;cursor:default">
+        <p class="word-hint">You can enter multiple words separated by commas or spaces.</p>
+      </div>
+      <button class="btn btn-green" disabled>Submit</button>
+    </div>
+
+    <!-- Tab 3: Word cloud view -->
+    <div class="fac-tab" id="ft-wordcloud">
+      <div class="wc-question-strip">
+        <p class="wc-subtitle" id="wc-subtitle">No active question</p>
+      </div>
+      <div class="wc-canvas-area" id="wc-canvas-area">
+        <div class="wc-empty" id="wc-empty">
+          <div class="wc-empty-icon">☁️</div>
+          <p>Words will appear here as<br>participants submit them.</p>
+        </div>
+        <svg id="wc-svg" style="display:none"></svg>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── NO SESSION VIEW ── -->
+  <div class="view" id="v-nosession">
+    <a href="../index.html" style="display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--muted);text-decoration:none;margin-bottom:4px;">← Back to toolkit</a>
+    <div class="header"><h1>Word Cloud</h1></div>
+    <div class="card">
+      <div class="empty">
+        <div class="empty-icon" style="font-size:32px">🔗</div>
+        <p class="empty-msg">No session found.<br>Please scan the QR code<br>from the facilitator's screen.</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Facilitator nav bar (injected by JS) -->
+<nav class="facilitator-nav-bar" id="fac-nav" style="display:none"></nav>
+
+<script>
+  // ── Firebase ──────────────────────────────────────────────────
+  const firebaseConfig = {
+    apiKey:            "AIzaSyBzc_CmZhahAyUNLcGL0vbP25Nj_qBMe7M",
+    authDomain:        "workshop-tools-ff457.firebaseapp.com",
+    projectId:         "workshop-tools-ff457",
+    storageBucket:     "workshop-tools-ff457.firebasestorage.app",
+    messagingSenderId: "142740807274",
+    appId:             "1:142740807274:web:149757a3b123db843af413"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  // ── Routing ──────────────────────────────────────────────────
+  const params = new URLSearchParams(location.search);
+  const IS_FACILITATOR = params.get('facilitator') === '1234';
+
+  let sessionId = params.get('session');
+  if (!sessionId && IS_FACILITATOR) {
+    sessionId = Math.random().toString(36).slice(2, 8).toUpperCase();
+    const newUrl = new URL(location.href);
+    newUrl.searchParams.set('session', sessionId);
+    history.replaceState({}, '', newUrl);
+  }
+
+  const WC_BASE_URL = 'https://susannekroghhansen.github.io/workshop-tools/wordcloud/';
+
+  function sessionRef() {
+    return db.collection('wc_sessions').doc(sessionId);
+  }
+
+  // ── Cached state ──────────────────────────────────────────────
+  let cachedState = { q: '', qid: '', words: {}, active: false };
+
+  // ── Facilitator tab state ─────────────────────────────────────
+  let fTab = 'fv';
+
+  // ── View routing ──────────────────────────────────────────────
+  function showView(name) {
+    ['participant', 'facilitator', 'nosession'].forEach(n => {
+      document.getElementById('v-' + n).classList.toggle('on', n === name);
+    });
+  }
+
+  // ── Facilitator tab switching ─────────────────────────────────
+  function switchFacTab(tab) {
+    fTab = tab;
+    ['fv', 'preview', 'wordcloud'].forEach(t => {
+      document.getElementById('ft-' + t).classList.toggle('on', t === tab);
+    });
+    document.body.classList.toggle('wc-mode', tab === 'wordcloud');
+    updateNavBar();
+    if (tab === 'wordcloud') {
+      setTimeout(renderWordCloud, 30); // wait for layout
+    }
+  }
+
+  function updateNavBar() {
+    const bar = document.getElementById('fac-nav');
+    const tabs = [
+      { id: 'fv',        label: 'Facilitator view' },
+      { id: 'preview',   label: 'Participant preview' },
+      { id: 'wordcloud', label: 'Word cloud' },
+    ];
+    bar.innerHTML = tabs.map(t =>
+      `<button class="nav-tab${fTab === t.id ? ' active' : ''}" onclick="switchFacTab('${t.id}')">${t.label}</button>`
+    ).join('');
+  }
+
+  // ── Firestore: subscribe ──────────────────────────────────────
+  function subscribeToSession() {
+    if (!sessionId) { renderApp(); return; }
+    sessionRef().onSnapshot(doc => {
+      if (doc.exists) {
+        const d = doc.data();
+        cachedState = {
+          q:      d.q      || '',
+          qid:    d.qid    || '',
+          words:  d.words  || {},
+          active: d.active || false
+        };
+      } else {
+        cachedState = { q: '', qid: '', words: {}, active: false };
+      }
+      renderApp();
+    }, err => console.error('Firestore error:', err));
+  }
+
+  // ── Firestore: write ──────────────────────────────────────────
+  async function setQuestion() {
+    const text = document.getElementById('q-input').value.trim();
+    if (!text || !sessionId) return;
+    const btn = document.querySelector('#ft-fv .btn-green');
+    btn.disabled = true;
+    try {
+      await sessionRef().set({
+        q: text,
+        qid: Date.now().toString(),
+        words: {},
+        active: true
+      });
+      document.getElementById('q-input').value = '';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function clearSession() {
+    if (!confirm('Clear the question and all submitted words?')) return;
+    await sessionRef().set({ q: '', qid: '', words: {}, active: false });
+  }
+
+  async function submitWords() {
+    const raw = document.getElementById('p-input').value;
+    const wordList = raw
+      .split(/[\s,،;]+/)
+      .map(w => w.trim().toLowerCase())
+      .filter(w => w.length > 0)
+      .slice(0, 10); // cap at 10 words per submission
+
+    if (!wordList.length || !sessionId) return;
+
+    const btn = document.getElementById('p-submit-btn');
+    btn.disabled = true;
+
+    const update = {};
+    wordList.forEach(w => {
+      update['words.' + w] = firebase.firestore.FieldValue.increment(1);
+    });
+
+    try {
+      await sessionRef().set(update, { merge: true });
+      // Show confirmation
+      document.getElementById('p-form').style.display = 'none';
+      document.getElementById('p-done').style.display = 'block';
+    } catch(e) {
+      console.error(e);
+      btn.disabled = false;
+    }
+  }
+
+  // ── Render functions ──────────────────────────────────────────
+  function renderApp() {
+    if (IS_FACILITATOR) {
+      renderFacilitator();
+    } else {
+      renderParticipant();
+    }
+  }
+
+  function renderParticipant() {
+    const st = cachedState;
+    const waitingEl  = document.getElementById('p-waiting');
+    const activeEl   = document.getElementById('p-active');
+    const questionEl = document.getElementById('p-question');
+    const subEl      = document.getElementById('p-header-sub');
+
+    if (!st.active || !st.q) {
+      waitingEl.style.display = 'block';
+      activeEl.style.display = 'none';
+      subEl.textContent = 'Share a word that comes to mind.';
+    } else {
+      waitingEl.style.display = 'none';
+      activeEl.style.display = 'flex';
+      questionEl.textContent = st.q;
+      subEl.textContent = 'Share a word that comes to mind.';
+    }
+  }
+
+  function renderFacilitator() {
+    const st = cachedState;
+
+    // Active question indicator
+    const activeChip = document.getElementById('f-active-q');
+    const activeText = document.getElementById('f-active-q-text');
+    const clearBtn   = document.getElementById('f-clear-btn');
+
+    if (st.active && st.q) {
+      activeChip.style.display = 'block';
+      activeText.textContent   = st.q;
+      clearBtn.style.display   = 'block';
+    } else {
+      activeChip.style.display = 'none';
+      clearBtn.style.display   = 'none';
+    }
+
+    // Preview tab
+    const prevQ       = document.getElementById('prev-question');
+    const prevQCard   = document.getElementById('prev-q-card');
+    const prevWaiting = document.getElementById('prev-waiting-card');
+    if (st.active && st.q) {
+      prevQ.textContent          = st.q;
+      prevQCard.style.display    = 'block';
+      prevWaiting.style.display  = 'none';
+    } else {
+      prevQCard.style.display    = 'none';
+      prevWaiting.style.display  = 'block';
+    }
+
+    // Word cloud tab
+    if (fTab === 'wordcloud') {
+      renderWordCloud();
+    }
+  }
+
+  // ── Word cloud rendering ──────────────────────────────────────
+  const WC_COLORS = ['#5e9977', '#3a6d52', '#7ab59a', '#4a7d61', '#2e6040', '#8ec4a8', '#1e4d36'];
+
+  let wcLayout = null; // track current layout to abort on re-render
+
+  function renderWordCloud() {
+    const st       = cachedState;
+    const subtitle = document.getElementById('wc-subtitle');
+    const svgEl    = document.getElementById('wc-svg');
+    const emptyEl  = document.getElementById('wc-empty');
+    const area     = document.getElementById('wc-canvas-area');
+
+    subtitle.textContent = st.q || 'No active question';
+
+    const entries = Object.entries(st.words || {}).filter(([, c]) => c > 0);
+
+    if (!entries.length) {
+      emptyEl.style.display = 'flex';
+      svgEl.style.display   = 'none';
+      return;
+    }
+
+    emptyEl.style.display = 'none';
+    svgEl.style.display   = 'block';
+
+    const rect = area.getBoundingClientRect();
+    const W    = Math.floor(rect.width)  || 600;
+    const H    = Math.floor(rect.height) || 400;
+
+    const freqs   = entries.map(([, c]) => c);
+    const maxFreq = Math.max(...freqs);
+    const minFreq = Math.min(...freqs);
+    const span    = maxFreq - minFreq || 1;
+
+    const MIN_FONT = 22, MAX_FONT = Math.min(100, Math.max(50, H * 0.18));
+
+    const wordData = entries.map(([text, count]) => ({
+      text,
+      size: MIN_FONT + (MAX_FONT - MIN_FONT) * (count - minFreq) / span
+    }));
+
+    d3.layout.cloud()
+      .size([W, H])
+      .words(wordData)
+      .padding(7)
+      .rotate(0)
+      .font('-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif')
+      .fontWeight('600')
+      .fontSize(d => d.size)
+      .on('end', function(laid) {
+        const svg = d3.select('#wc-svg')
+          .attr('width', W)
+          .attr('height', H);
+
+        svg.selectAll('*').remove();
+
+        svg.append('g')
+          .attr('transform', `translate(${W / 2},${H / 2})`)
+          .selectAll('text')
+          .data(laid)
+          .join('text')
+            .style('font-size', d => `${d.size}px`)
+            .style('font-family', '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif')
+            .style('font-weight', '600')
+            .style('fill', (d, i) => WC_COLORS[i % WC_COLORS.length])
+            .attr('text-anchor', 'middle')
+            .attr('transform', d => `translate(${d.x},${d.y}) rotate(${d.rotate})`)
+            .text(d => d.text);
+      })
+      .start();
+  }
+
+  // ── Participant helpers ───────────────────────────────────────
+  function onWordInput() {
+    const val = document.getElementById('p-input').value;
+    document.getElementById('p-submit-btn').disabled = val.trim().length === 0;
+  }
+
+  function resetParticipantForm() {
+    document.getElementById('p-input').value = '';
+    document.getElementById('p-submit-btn').disabled = true;
+    document.getElementById('p-form').style.display = 'flex';
+    document.getElementById('p-done').style.display  = 'none';
+  }
+
+  // ── QR code ──────────────────────────────────────────────────
+  function showFacilitatorQR() {
+    if (!sessionId) return;
+    const participantUrl = `${WC_BASE_URL}?session=${sessionId}`;
+    document.getElementById('f-qr-img').src =
+      `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(participantUrl)}&color=2e3d38&bgcolor=ffffff&margin=2`;
+    document.getElementById('f-qr-url').textContent = participantUrl;
+  }
+
+  // ── Re-render word cloud on resize (when visible) ─────────────
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    if (fTab === 'wordcloud') {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(renderWordCloud, 150);
+    }
+  });
+
+  // ── Init ──────────────────────────────────────────────────────
+  if (IS_FACILITATOR) {
+    document.body.classList.add('is-facilitator');
+    showView('facilitator');
+    showFacilitatorQR();
+    updateNavBar();
+    document.getElementById('fac-nav').style.display = 'flex';
+    subscribeToSession();
+  } else if (sessionId) {
+    showView('participant');
+    subscribeToSession();
+  } else {
+    showView('nosession');
+  }
+</script>
+</body>
+</html>
