@@ -34,7 +34,7 @@
 
     /* ── Layout ── */
     .view { display: none; }
-    .view.active { display: flex; flex-direction: column; align-items: center; padding: 2rem 1.25rem 4rem; min-height: 100dvh; }
+    .view.active { display: flex; flex-direction: column; align-items: center; padding: 2rem 1.25rem 5rem; min-height: 100dvh; }
 
     .logo { font-size: 2rem; margin-bottom: 0.25rem; }
     h1 { font-size: 1.55rem; font-weight: 600; letter-spacing: -0.02em; color: var(--text); margin-bottom: 0.35rem; }
@@ -223,43 +223,6 @@
     .btn-red:hover { background: #f2dada; }
     .btn-red:active { transform: scale(0.98); }
 
-    .btn-ghost {
-      background: transparent;
-      color: var(--muted);
-      border: 1.5px solid var(--border);
-      flex: 1;
-    }
-    .btn-ghost:hover { border-color: var(--green); color: var(--green); }
-    .btn-ghost:active { transform: scale(0.98); }
-
-    /* ── Tabs (facilitator) ── */
-    .tab-bar {
-      display: flex;
-      gap: 0;
-      background: var(--card);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 0.35rem;
-      width: 100%;
-      max-width: 500px;
-      margin-bottom: 1rem;
-    }
-    .tab {
-      flex: 1;
-      padding: 0.5rem;
-      border-radius: 10px;
-      border: none;
-      background: transparent;
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--muted);
-      cursor: pointer;
-      transition: all 0.15s;
-      font-family: inherit;
-    }
-    .tab.active { background: var(--green); color: white; }
-    .tab:hover:not(.active) { color: var(--text); }
-
     /* ── QR / Share ── */
     .qr-wrap {
       display: flex;
@@ -323,17 +286,130 @@
     .no-session .big { font-size: 2.5rem; margin-bottom: 0.75rem; }
     .no-session p { font-size: 0.9rem; color: var(--muted); }
 
-    /* ── Nav bar (facilitator bottom) ── */
-    .nav-bar {
+    /* ── Facilitator tab content ── */
+    .fac-tab { display: none; flex-direction: column; align-items: center; width: 100%; }
+    .fac-tab.on { display: flex; }
+
+    /* ── Timer view (full screen overlay) ── */
+    #fac-timer.on {
       position: fixed;
-      bottom: 0; left: 0; right: 0;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      z-index: 50;
+      padding: 2rem;
+    }
+    .tv-digits {
+      font-size: clamp(5rem, 22vw, 14rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      color: var(--timer-green);
+      font-variant-numeric: tabular-nums;
+      transition: color 0.4s ease;
+    }
+    .tv-label {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      min-height: 1.4em;
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+    .tv-done-msg {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--timer-red);
+      margin-top: 0.75rem;
+      min-height: 2em;
+      text-align: center;
+    }
+    .tv-progress-track {
+      width: min(440px, 80vw);
+      height: 8px;
+      background: rgba(0,0,0,0.08);
+      border-radius: 999px;
+      margin-top: 2rem;
+      overflow: hidden;
+    }
+    .tv-progress-bar {
+      height: 100%;
+      border-radius: 999px;
+      background: var(--timer-green);
+      transition: width 0.5s linear, background 0.4s ease;
+    }
+
+    /* ── Preview banner ── */
+    .preview-banner {
+      background: var(--muted);
+      color: white;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-align: center;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      width: 100%;
+      max-width: 500px;
+      opacity: 0.8;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Facilitator badge ── */
+    .facilitator-badge {
+      position: fixed;
+      top: 14px;
+      right: 16px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 99px;
+      padding: 4px 10px;
+      z-index: 20;
+    }
+
+    /* ── Bottom nav bar ── */
+    .facilitator-nav-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
       background: var(--card);
       border-top: 1px solid var(--border);
+      padding: 10px 16px;
       display: flex;
       justify-content: center;
-      padding: 0.5rem 1rem;
-      gap: 0.5rem;
-      z-index: 100;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    .nav-tab {
+      padding: 10px 18px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      color: var(--muted);
+      background: transparent;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+
+    .nav-tab:hover { background: var(--bg); color: var(--text); }
+
+    .nav-tab.active {
+      background: var(--green);
+      color: #fff;
+      border-color: var(--green);
     }
   </style>
 </head>
@@ -366,18 +442,13 @@
 
 <!-- FACILITATOR VIEW -->
 <div id="view-facilitator" class="view">
-  <div class="logo">⏱️</div>
-  <h1>Timer</h1>
-  <p class="subtitle">Set a countdown for your workshop</p>
 
-  <div class="tab-bar">
-    <button class="tab active" onclick="switchTab('setup')">Setup</button>
-    <button class="tab" onclick="switchTab('preview')">Preview</button>
-    <button class="tab" onclick="switchTab('share')">Share</button>
-  </div>
+  <!-- TAB: Facilitator view -->
+  <div id="fac-facilitator" class="fac-tab on">
+    <div class="logo">⏱️</div>
+    <h1>Timer</h1>
+    <p class="subtitle">Set a countdown for your workshop</p>
 
-  <!-- Setup tab -->
-  <div id="tab-setup" style="width:100%;max-width:500px;">
     <div class="card">
       <div class="card-title">Label (optional)</div>
       <div class="field">
@@ -404,7 +475,7 @@
       <div class="progress-track"><div class="progress-bar" id="f-preview-progress" style="width:100%"></div></div>
     </div>
 
-    <div class="status-row">
+    <div class="status-row" style="width:100%;max-width:500px;">
       <div class="dot" id="f-dot"></div>
       <span id="f-status-txt">Ready</span>
     </div>
@@ -413,28 +484,7 @@
       <button class="btn-green" id="f-start-btn" onclick="toggleTimer()">▶ Start</button>
       <button class="btn-red" id="f-reset-btn" onclick="resetTimer()">↺ Reset</button>
     </div>
-  </div>
 
-  <!-- Preview tab -->
-  <div id="tab-preview" style="width:100%;max-width:500px;display:none;">
-    <div class="card">
-      <div class="card-title">Participant view</div>
-      <p style="font-size:0.88rem;color:var(--muted);margin-bottom:1rem;">This is what participants see on their devices.</p>
-    </div>
-    <div class="timer-display" id="prev-display">
-      <div class="timer-label" id="prev-label"></div>
-      <div class="timer-digits" id="prev-digits">5:00</div>
-      <div class="timer-done-msg" id="prev-done"></div>
-      <div class="progress-track"><div class="progress-bar" id="prev-progress" style="width:100%"></div></div>
-    </div>
-    <div class="status-row" style="justify-content:center;">
-      <div class="dot" id="prev-dot"></div>
-      <span id="prev-status-txt">Ready</span>
-    </div>
-  </div>
-
-  <!-- Share tab -->
-  <div id="tab-share" style="width:100%;max-width:500px;display:none;">
     <div class="card">
       <div class="card-title">Share with participants</div>
       <div class="qr-wrap">
@@ -444,6 +494,43 @@
       </div>
     </div>
   </div>
+
+  <!-- TAB: Participant preview -->
+  <div id="fac-preview" class="fac-tab">
+    <div class="preview-banner">Preview mode — this is what participants see</div>
+    <div class="logo">⏱️</div>
+    <h1>Timer</h1>
+    <p class="subtitle" id="prev-subtitle">Waiting for facilitator…</p>
+
+    <div id="prev-waiting" class="waiting-msg">
+      <div class="big">⏳</div>
+      <p>The facilitator hasn't started a timer yet.</p>
+    </div>
+
+    <div id="prev-timer-wrap" style="width:100%;max-width:500px;display:none;">
+      <div class="status-row" style="justify-content:center;">
+        <div class="dot" id="prev-dot"></div>
+        <span id="prev-status-txt">Waiting…</span>
+      </div>
+      <div class="timer-display" id="prev-display">
+        <div class="timer-label" id="prev-label"></div>
+        <div class="timer-digits" id="prev-digits">5:00</div>
+        <div class="timer-done-msg" id="prev-done"></div>
+        <div class="progress-track"><div class="progress-bar" id="prev-progress" style="width:100%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Timer view (full screen) -->
+  <div id="fac-timer" class="fac-tab">
+    <div class="tv-label" id="tv-label"></div>
+    <div class="tv-digits" id="tv-digits">5:00</div>
+    <div class="tv-done-msg" id="tv-done"></div>
+    <div class="tv-progress-track">
+      <div class="tv-progress-bar" id="tv-progress" style="width:100%"></div>
+    </div>
+  </div>
+
 </div>
 
 <!-- NO SESSION VIEW -->
@@ -488,10 +575,10 @@
   }
 
   // ── State ──
-  let cachedState = null;   // Firestore state
+  let cachedState = null;
   let selectedDuration = 5 * 60; // seconds (default 5 min)
   let localIntervalId = null;
-  let currentTab = 'setup';
+  let fTab = 'facilitator';
 
   // ── Timer math ──
   function computeRemaining(state) {
@@ -544,14 +631,67 @@
     }
   }
 
+  function applyTimerViewUI(remaining, duration) {
+    const cls = timerColorClass(remaining, duration || selectedDuration);
+    const tvDigits = document.getElementById('tv-digits');
+    const tvDone = document.getElementById('tv-done');
+    const tvProgress = document.getElementById('tv-progress');
+    const tvLabel = document.getElementById('tv-label');
+
+    let color = 'var(--timer-green)';
+    if (cls === 'done' || cls === 'red') color = 'var(--timer-red)';
+    else if (cls === 'yellow') color = 'var(--timer-yellow)';
+
+    tvDigits.style.color = color;
+    tvProgress.style.background = color;
+    tvDigits.textContent = formatTime(remaining);
+    tvDone.textContent = remaining <= 0 ? "⏰ Time's up!" : '';
+    const pct = duration ? Math.max(0, Math.min(1, remaining / duration)) * 100 : 100;
+    tvProgress.style.width = pct + '%';
+    tvLabel.textContent = cachedState ? (cachedState.label || '') : '';
+  }
+
+  function updateParticipantPreview(rem, dur) {
+    if (!cachedState) return;
+    const hasStarted = cachedState.duration && (cachedState.running || cachedState.remaining < cachedState.duration);
+
+    if (hasStarted || cachedState.running) {
+      document.getElementById('prev-waiting').style.display = 'none';
+      document.getElementById('prev-timer-wrap').style.display = 'block';
+      document.getElementById('prev-subtitle').textContent = 'Live timer';
+    } else if (rem <= 0) {
+      document.getElementById('prev-waiting').style.display = 'none';
+      document.getElementById('prev-timer-wrap').style.display = 'block';
+      document.getElementById('prev-subtitle').textContent = 'Timer ended';
+    } else {
+      document.getElementById('prev-waiting').style.display = 'block';
+      document.getElementById('prev-timer-wrap').style.display = 'none';
+      document.getElementById('prev-subtitle').textContent = 'Waiting for facilitator…';
+    }
+
+    applyTimerUI(
+      document.getElementById('prev-display'),
+      document.getElementById('prev-digits'),
+      document.getElementById('prev-done'),
+      document.getElementById('prev-progress'),
+      rem, dur, cachedState.running
+    );
+    document.getElementById('prev-label').textContent = cachedState.label || '';
+    applyDotStatus(
+      document.getElementById('prev-dot'),
+      document.getElementById('prev-status-txt'),
+      cachedState, rem
+    );
+  }
+
   // ── Tick (runs every 100ms) ──
   function tick() {
     if (!cachedState) return;
     const dur = cachedState.duration || selectedDuration;
     const rem = computeRemaining(cachedState);
 
-    // Facilitator setup tab
     if (IS_FACILITATOR) {
+      // Facilitator controls tab
       applyTimerUI(
         document.getElementById('f-preview-display'),
         document.getElementById('f-preview-digits'),
@@ -559,11 +699,13 @@
         document.getElementById('f-preview-progress'),
         rem, dur, cachedState.running
       );
+      document.getElementById('f-preview-label').textContent = cachedState.label || '';
       applyDotStatus(
         document.getElementById('f-dot'),
         document.getElementById('f-status-txt'),
         cachedState, rem
       );
+
       // Update start button label
       const startBtn = document.getElementById('f-start-btn');
       if (rem <= 0) {
@@ -577,20 +719,11 @@
         startBtn.disabled = false;
       }
 
-      // Preview tab
-      applyTimerUI(
-        document.getElementById('prev-display'),
-        document.getElementById('prev-digits'),
-        document.getElementById('prev-done'),
-        document.getElementById('prev-progress'),
-        rem, dur, cachedState.running
-      );
-      document.getElementById('prev-label').textContent = cachedState.label || '';
-      applyDotStatus(
-        document.getElementById('prev-dot'),
-        document.getElementById('prev-status-txt'),
-        cachedState, rem
-      );
+      // Participant preview tab
+      updateParticipantPreview(rem, dur);
+
+      // Timer view (full screen)
+      applyTimerViewUI(rem, dur);
     }
 
     // Participant view
@@ -629,10 +762,8 @@
     if (rem <= 0) return;
 
     if (cachedState.running) {
-      // Pause
       await sessionRef().set({ running: false, remaining: rem }, { merge: true });
     } else {
-      // Start / Resume
       await sessionRef().set({ running: true, startedAt: Date.now(), remaining: rem }, { merge: true });
     }
   }
@@ -683,17 +814,29 @@
     document.getElementById('f-preview-progress').style.width = '100%';
     document.getElementById('f-preview-display').className = 'timer-display';
     document.getElementById('f-preview-done').textContent = '';
+    document.getElementById('tv-digits').textContent = formatTime(selectedDuration);
+    document.getElementById('tv-progress').style.width = '100%';
+    document.getElementById('tv-digits').style.color = 'var(--timer-green)';
+    document.getElementById('tv-progress').style.background = 'var(--timer-green)';
+    document.getElementById('tv-done').textContent = '';
   }
 
   // ── Tab switching ──
-  function switchTab(tab) {
-    currentTab = tab;
-    ['setup', 'preview', 'share'].forEach(t => {
-      document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
+  function switchFacTab(tab) {
+    fTab = tab;
+    ['facilitator', 'preview', 'timer'].forEach(t => {
+      document.getElementById(`fac-${t}`).classList.toggle('on', t === tab);
     });
-    document.querySelectorAll('.tab').forEach((btn, i) => {
-      btn.classList.toggle('active', ['setup', 'preview', 'share'][i] === tab);
-    });
+    updateNavBar();
+  }
+
+  function updateNavBar() {
+    const bar = document.querySelector('.facilitator-nav-bar');
+    if (!bar) return;
+    bar.innerHTML = `
+      <button class="nav-tab${fTab === 'facilitator' ? ' active' : ''}" onclick="switchFacTab('facilitator')">Facilitator view</button>
+      <button class="nav-tab${fTab === 'preview' ? ' active' : ''}" onclick="switchFacTab('preview')">Participant preview</button>
+      <button class="nav-tab${fTab === 'timer' ? ' active' : ''}" onclick="switchFacTab('timer')">Timer view</button>`;
   }
 
   // ── Copy URL ──
@@ -714,6 +857,18 @@
   function init() {
     if (IS_FACILITATOR && sessionId) {
       showView('view-facilitator');
+
+      // Add facilitator badge
+      const badge = document.createElement('div');
+      badge.className = 'facilitator-badge';
+      badge.textContent = 'Facilitator view';
+      document.body.appendChild(badge);
+
+      // Add bottom nav bar
+      const bar = document.createElement('div');
+      bar.className = 'facilitator-nav-bar';
+      document.body.appendChild(bar);
+      updateNavBar();
 
       // Build share URL
       const shareUrl = new URL(location.href);
@@ -740,7 +895,6 @@
       sessionRef().onSnapshot(doc => {
         if (doc.exists) {
           cachedState = doc.data();
-          // Sync label input with Firestore if changed externally
           const labelInput = document.getElementById('f-label');
           if (document.activeElement !== labelInput) {
             labelInput.value = cachedState.label || '';
