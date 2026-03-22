@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workshop Timer</title>
+  <style>
+    :root {
+      --bg:       #f4f7f6;
+      --card:     #ffffff;
+      --green:    #5e9977;
+      --green-dk: #4a7d61;
+      --red-txt:  #5a2020;
+      --text:     #2e3d38;
+      --muted:    #7a9990;
+      --border:   #cdd9d5;
+      --shadow:   0 2px 14px rgba(0,0,0,0.06);
+      --radius:   14px;
+      /* Timer color states */
+      --timer-green:    #5e9977;
+      --timer-green-bg: #eaf4ef;
+      --timer-yellow:   #b8860b;
+      --timer-yellow-bg:#fdf6d8;
+      --timer-red:      #c0392b;
+      --timer-red-bg:   #fdecea;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+    }
+
+    /* ── Layout ── */
+    .view { display: none; }
+    .view.active { display: flex; flex-direction: column; align-items: center; padding: 2rem 1.25rem 4rem; min-height: 100dvh; }
+
+    .logo { font-size: 2rem; margin-bottom: 0.25rem; }
+    h1 { font-size: 1.55rem; font-weight: 600; letter-spacing: -0.02em; color: var(--text); margin-bottom: 0.35rem; }
+    .subtitle { font-size: 0.9rem; color: var(--muted); margin-bottom: 1.5rem; }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.4rem;
+      width: 100%;
+      max-width: 500px;
+      margin-bottom: 1rem;
+    }
+    .card-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      margin-bottom: 0.9rem;
+    }
+
+    /* ── Timer Display ── */
+    .timer-display {
+      text-align: center;
+      padding: 2rem 1.5rem;
+      border-radius: var(--radius);
+      background: var(--timer-green-bg);
+      transition: background 0.4s ease;
+      margin-bottom: 1rem;
+      width: 100%;
+      max-width: 500px;
+    }
+    .timer-display.yellow { background: var(--timer-yellow-bg); }
+    .timer-display.red    { background: var(--timer-red-bg); }
+    .timer-display.done   { background: var(--timer-red-bg); }
+
+    .timer-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      min-height: 1.2em;
+      margin-bottom: 0.4rem;
+    }
+    .timer-digits {
+      font-size: 5rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      color: var(--timer-green);
+      font-variant-numeric: tabular-nums;
+      transition: color 0.4s ease;
+    }
+    .timer-display.yellow .timer-digits { color: var(--timer-yellow); }
+    .timer-display.red    .timer-digits { color: var(--timer-red); }
+    .timer-display.done   .timer-digits { color: var(--timer-red); }
+
+    .timer-done-msg {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--timer-red);
+      margin-top: 0.5rem;
+      min-height: 1.5em;
+    }
+
+    /* Progress bar */
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(0,0,0,0.08);
+      border-radius: 999px;
+      margin-top: 1rem;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      border-radius: 999px;
+      background: var(--timer-green);
+      transition: width 0.5s linear, background 0.4s ease;
+    }
+    .timer-display.yellow .progress-bar { background: var(--timer-yellow); }
+    .timer-display.red    .progress-bar { background: var(--timer-red); }
+    .timer-display.done   .progress-bar { background: var(--timer-red); }
+
+    /* ── Facilitator Setup ── */
+    .field { margin-bottom: 1rem; }
+    .field label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      margin-bottom: 0.45rem;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      font-size: 1rem;
+      font-family: inherit;
+      background: #f8faf9;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input[type="text"]:focus { border-color: var(--green); background: #fff; }
+
+    /* Duration presets */
+    .presets {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.6rem;
+    }
+    .preset-btn {
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: #f8faf9;
+      color: var(--text);
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .preset-btn:hover { border-color: var(--green); color: var(--green); }
+    .preset-btn.selected { border-color: var(--green); background: #eaf4ef; color: var(--green-dk); }
+
+    .custom-duration {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .custom-duration input[type="number"] {
+      width: 70px;
+      padding: 0.5rem 0.6rem;
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      font-size: 1rem;
+      font-family: inherit;
+      background: #f8faf9;
+      color: var(--text);
+      outline: none;
+      text-align: center;
+    }
+    .custom-duration input[type="number"]:focus { border-color: var(--green); background: #fff; }
+    .custom-duration span { font-size: 0.9rem; color: var(--muted); }
+
+    /* ── Buttons ── */
+    .btn-row { display: flex; gap: 0.6rem; width: 100%; max-width: 500px; margin-bottom: 0.6rem; }
+    button {
+      padding: 0.75rem 1.2rem;
+      border-radius: 10px;
+      border: none;
+      font-size: 0.97rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+    .btn-green {
+      background: var(--green);
+      color: white;
+      flex: 1;
+    }
+    .btn-green:hover { background: var(--green-dk); }
+    .btn-green:active { transform: scale(0.98); }
+    .btn-green:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; }
+
+    .btn-red {
+      background: #f9eded;
+      color: var(--red-txt);
+      border: 1.5px solid #e8cece;
+      flex: 1;
+    }
+    .btn-red:hover { background: #f2dada; }
+    .btn-red:active { transform: scale(0.98); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1.5px solid var(--border);
+      flex: 1;
+    }
+    .btn-ghost:hover { border-color: var(--green); color: var(--green); }
+    .btn-ghost:active { transform: scale(0.98); }
+
+    /* ── Tabs (facilitator) ── */
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 0.35rem;
+      width: 100%;
+      max-width: 500px;
+      margin-bottom: 1rem;
+    }
+    .tab {
+      flex: 1;
+      padding: 0.5rem;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .tab.active { background: var(--green); color: white; }
+    .tab:hover:not(.active) { color: var(--text); }
+
+    /* ── QR / Share ── */
+    .qr-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.8rem;
+    }
+    .qr-wrap img { border-radius: 8px; }
+    .share-url {
+      width: 100%;
+      padding: 0.6rem 0.85rem;
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      font-size: 0.82rem;
+      font-family: inherit;
+      background: #f8faf9;
+      color: var(--muted);
+      text-align: center;
+      cursor: pointer;
+      outline: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .share-url:focus { border-color: var(--green); }
+    .copy-hint { font-size: 0.75rem; color: var(--muted); }
+
+    /* ── Status dot ── */
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+    }
+    .dot.live { background: var(--green); animation: pulse 1.6s ease-in-out infinite; }
+    .dot.paused { background: var(--timer-yellow); }
+    .dot.done { background: var(--timer-red); }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.35; }
+    }
+
+    /* ── Participant waiting ── */
+    .waiting-msg {
+      text-align: center;
+      padding: 3rem 1.5rem;
+      color: var(--muted);
+    }
+    .waiting-msg .big { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .waiting-msg p { font-size: 0.95rem; }
+
+    /* ── No session ── */
+    .no-session { text-align: center; padding: 3rem 1.5rem; }
+    .no-session .big { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .no-session p { font-size: 0.9rem; color: var(--muted); }
+
+    /* ── Nav bar (facilitator bottom) ── */
+    .nav-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: center;
+      padding: 0.5rem 1rem;
+      gap: 0.5rem;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+
+<!-- PARTICIPANT VIEW -->
+<div id="view-participant" class="view">
+  <div class="logo">⏱️</div>
+  <h1>Timer</h1>
+  <p class="subtitle" id="p-subtitle">Waiting for facilitator…</p>
+
+  <div id="p-waiting" class="waiting-msg">
+    <div class="big">⏳</div>
+    <p>The facilitator hasn't started a timer yet.</p>
+  </div>
+
+  <div id="p-timer-wrap" style="width:100%;max-width:500px;display:none;">
+    <div class="status-row" style="justify-content:center;">
+      <div class="dot" id="p-dot"></div>
+      <span id="p-status-txt">Waiting…</span>
+    </div>
+    <div class="timer-display" id="p-timer-display">
+      <div class="timer-label" id="p-label"></div>
+      <div class="timer-digits" id="p-digits">0:00</div>
+      <div class="timer-done-msg" id="p-done-msg"></div>
+      <div class="progress-track"><div class="progress-bar" id="p-progress" style="width:100%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- FACILITATOR VIEW -->
+<div id="view-facilitator" class="view">
+  <div class="logo">⏱️</div>
+  <h1>Timer</h1>
+  <p class="subtitle">Set a countdown for your workshop</p>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('setup')">Setup</button>
+    <button class="tab" onclick="switchTab('preview')">Preview</button>
+    <button class="tab" onclick="switchTab('share')">Share</button>
+  </div>
+
+  <!-- Setup tab -->
+  <div id="tab-setup" style="width:100%;max-width:500px;">
+    <div class="card">
+      <div class="card-title">Label (optional)</div>
+      <div class="field">
+        <input type="text" id="f-label" placeholder="e.g. Breakout discussion" maxlength="60" oninput="onLabelInput()" />
+      </div>
+      <div class="card-title">Duration</div>
+      <div class="presets">
+        <button class="preset-btn" onclick="selectPreset(2)">2 min</button>
+        <button class="preset-btn selected" onclick="selectPreset(5)">5 min</button>
+        <button class="preset-btn" onclick="selectPreset(10)">10 min</button>
+        <button class="preset-btn" onclick="selectPreset(15)">15 min</button>
+        <button class="preset-btn" onclick="selectPreset(20)">20 min</button>
+      </div>
+      <div class="custom-duration">
+        <input type="number" id="f-custom-min" min="1" max="90" placeholder="—" oninput="onCustomInput()" />
+        <span>min custom</span>
+      </div>
+    </div>
+
+    <div class="timer-display" id="f-preview-display">
+      <div class="timer-label" id="f-preview-label"></div>
+      <div class="timer-digits" id="f-preview-digits">5:00</div>
+      <div class="timer-done-msg" id="f-preview-done"></div>
+      <div class="progress-track"><div class="progress-bar" id="f-preview-progress" style="width:100%"></div></div>
+    </div>
+
+    <div class="status-row">
+      <div class="dot" id="f-dot"></div>
+      <span id="f-status-txt">Ready</span>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-green" id="f-start-btn" onclick="toggleTimer()">▶ Start</button>
+      <button class="btn-red" id="f-reset-btn" onclick="resetTimer()">↺ Reset</button>
+    </div>
+  </div>
+
+  <!-- Preview tab -->
+  <div id="tab-preview" style="width:100%;max-width:500px;display:none;">
+    <div class="card">
+      <div class="card-title">Participant view</div>
+      <p style="font-size:0.88rem;color:var(--muted);margin-bottom:1rem;">This is what participants see on their devices.</p>
+    </div>
+    <div class="timer-display" id="prev-display">
+      <div class="timer-label" id="prev-label"></div>
+      <div class="timer-digits" id="prev-digits">5:00</div>
+      <div class="timer-done-msg" id="prev-done"></div>
+      <div class="progress-track"><div class="progress-bar" id="prev-progress" style="width:100%"></div></div>
+    </div>
+    <div class="status-row" style="justify-content:center;">
+      <div class="dot" id="prev-dot"></div>
+      <span id="prev-status-txt">Ready</span>
+    </div>
+  </div>
+
+  <!-- Share tab -->
+  <div id="tab-share" style="width:100%;max-width:500px;display:none;">
+    <div class="card">
+      <div class="card-title">Share with participants</div>
+      <div class="qr-wrap">
+        <img id="f-qr" src="" width="180" height="180" alt="QR code" />
+        <input type="text" class="share-url" id="f-share-url" readonly onclick="copyUrl(this)" />
+        <span class="copy-hint" id="f-copy-hint">Tap to copy link</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NO SESSION VIEW -->
+<div id="view-nosession" class="view">
+  <div class="logo">⏱️</div>
+  <h1>Timer</h1>
+  <div class="no-session">
+    <div class="big">🔗</div>
+    <p>Ask your facilitator for the participant link.</p>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+  // ── Firebase ──
+  const firebaseConfig = {
+    apiKey:            "AIzaSyBzc_CmZhahAyUNLcGL0vbP25Nj_qBMe7M",
+    authDomain:        "workshop-tools-ff457.firebaseapp.com",
+    projectId:         "workshop-tools-ff457",
+    storageBucket:     "workshop-tools-ff457.firebasestorage.app",
+    messagingSenderId: "142740807274",
+    appId:             "1:142740807274:web:149757a3b123db843af413"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  // ── URL params ──
+  const params = new URLSearchParams(location.search);
+  const IS_FACILITATOR = params.get('facilitator') === '1234';
+  let sessionId = params.get('session');
+
+  if (!sessionId && IS_FACILITATOR) {
+    sessionId = Math.random().toString(36).slice(2, 8).toUpperCase();
+    const newUrl = new URL(location.href);
+    newUrl.searchParams.set('session', sessionId);
+    history.replaceState({}, '', newUrl);
+  }
+
+  function sessionRef() {
+    return db.collection('timer_sessions').doc(sessionId);
+  }
+
+  // ── State ──
+  let cachedState = null;   // Firestore state
+  let selectedDuration = 5 * 60; // seconds (default 5 min)
+  let localIntervalId = null;
+  let currentTab = 'setup';
+
+  // ── Timer math ──
+  function computeRemaining(state) {
+    if (!state) return 0;
+    if (!state.running) return state.remaining || 0;
+    const elapsed = (Date.now() - (state.startedAt || Date.now())) / 1000;
+    return Math.max(0, (state.remaining || 0) - elapsed);
+  }
+
+  function formatTime(secs) {
+    const s = Math.ceil(secs);
+    const m = Math.floor(s / 60);
+    const ss = s % 60;
+    return `${m}:${ss.toString().padStart(2, '0')}`;
+  }
+
+  function timerColorClass(remaining, duration) {
+    if (remaining <= 0) return 'done';
+    const pct = remaining / duration;
+    if (pct <= 0.25) return 'red';
+    if (pct <= 0.50) return 'yellow';
+    return '';
+  }
+
+  // ── Render helpers ──
+  function applyTimerUI(displayEl, digitsEl, doneEl, progressEl, remaining, duration, running) {
+    const cls = timerColorClass(remaining, duration || selectedDuration);
+    displayEl.className = 'timer-display' + (cls ? ' ' + cls : '');
+    digitsEl.textContent = formatTime(remaining);
+    doneEl.textContent = remaining <= 0 ? "⏰ Time's up!" : '';
+    const pct = duration ? Math.max(0, Math.min(1, remaining / duration)) * 100 : 100;
+    progressEl.style.width = pct + '%';
+  }
+
+  function applyDotStatus(dotEl, statusTxtEl, state, remaining) {
+    dotEl.className = 'dot';
+    if (!state) {
+      statusTxtEl.textContent = 'Ready';
+      return;
+    }
+    if (remaining <= 0) {
+      dotEl.classList.add('done');
+      statusTxtEl.textContent = "Time's up";
+    } else if (state.running) {
+      dotEl.classList.add('live');
+      statusTxtEl.textContent = 'Running';
+    } else {
+      dotEl.classList.add('paused');
+      statusTxtEl.textContent = state.remaining === state.duration ? 'Ready' : 'Paused';
+    }
+  }
+
+  // ── Tick (runs every 100ms) ──
+  function tick() {
+    if (!cachedState) return;
+    const dur = cachedState.duration || selectedDuration;
+    const rem = computeRemaining(cachedState);
+
+    // Facilitator setup tab
+    if (IS_FACILITATOR) {
+      applyTimerUI(
+        document.getElementById('f-preview-display'),
+        document.getElementById('f-preview-digits'),
+        document.getElementById('f-preview-done'),
+        document.getElementById('f-preview-progress'),
+        rem, dur, cachedState.running
+      );
+      applyDotStatus(
+        document.getElementById('f-dot'),
+        document.getElementById('f-status-txt'),
+        cachedState, rem
+      );
+      // Update start button label
+      const startBtn = document.getElementById('f-start-btn');
+      if (rem <= 0) {
+        startBtn.textContent = '▶ Start';
+        startBtn.disabled = true;
+      } else if (cachedState.running) {
+        startBtn.innerHTML = '⏸ Pause';
+        startBtn.disabled = false;
+      } else {
+        startBtn.innerHTML = '▶ ' + (cachedState.remaining < cachedState.duration ? 'Resume' : 'Start');
+        startBtn.disabled = false;
+      }
+
+      // Preview tab
+      applyTimerUI(
+        document.getElementById('prev-display'),
+        document.getElementById('prev-digits'),
+        document.getElementById('prev-done'),
+        document.getElementById('prev-progress'),
+        rem, dur, cachedState.running
+      );
+      document.getElementById('prev-label').textContent = cachedState.label || '';
+      applyDotStatus(
+        document.getElementById('prev-dot'),
+        document.getElementById('prev-status-txt'),
+        cachedState, rem
+      );
+    }
+
+    // Participant view
+    if (!IS_FACILITATOR) {
+      applyTimerUI(
+        document.getElementById('p-timer-display'),
+        document.getElementById('p-digits'),
+        document.getElementById('p-done-msg'),
+        document.getElementById('p-progress'),
+        rem, dur, cachedState.running
+      );
+      document.getElementById('p-label').textContent = cachedState.label || '';
+      applyDotStatus(
+        document.getElementById('p-dot'),
+        document.getElementById('p-status-txt'),
+        cachedState, rem
+      );
+    }
+
+    // Stop ticking if done and not running
+    if (rem <= 0 && !cachedState.running && localIntervalId) {
+      clearInterval(localIntervalId);
+      localIntervalId = null;
+    }
+  }
+
+  function startLocalTick() {
+    if (localIntervalId) clearInterval(localIntervalId);
+    localIntervalId = setInterval(tick, 100);
+  }
+
+  // ── Facilitator actions ──
+  async function toggleTimer() {
+    if (!cachedState) return;
+    const rem = computeRemaining(cachedState);
+    if (rem <= 0) return;
+
+    if (cachedState.running) {
+      // Pause
+      await sessionRef().set({ running: false, remaining: rem }, { merge: true });
+    } else {
+      // Start / Resume
+      await sessionRef().set({ running: true, startedAt: Date.now(), remaining: rem }, { merge: true });
+    }
+  }
+
+  async function resetTimer() {
+    await sessionRef().set({
+      label: document.getElementById('f-label').value.trim(),
+      duration: selectedDuration,
+      remaining: selectedDuration,
+      running: false,
+      startedAt: null
+    });
+    document.getElementById('f-start-btn').disabled = false;
+  }
+
+  async function onLabelInput() {
+    if (!cachedState) return;
+    const label = document.getElementById('f-label').value.trim();
+    await sessionRef().set({ label }, { merge: true });
+  }
+
+  // ── Duration selection ──
+  function selectPreset(minutes) {
+    selectedDuration = minutes * 60;
+    document.getElementById('f-custom-min').value = '';
+    document.querySelectorAll('.preset-btn').forEach(b => {
+      b.classList.toggle('selected', b.textContent.trim() === `${minutes} min`);
+    });
+    updateLocalPreview();
+    if (cachedState && !cachedState.running) {
+      sessionRef().set({ duration: selectedDuration, remaining: selectedDuration, running: false }, { merge: true });
+    }
+  }
+
+  function onCustomInput() {
+    const val = parseInt(document.getElementById('f-custom-min').value);
+    if (!val || val < 1) return;
+    selectedDuration = val * 60;
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('selected'));
+    updateLocalPreview();
+    if (cachedState && !cachedState.running) {
+      sessionRef().set({ duration: selectedDuration, remaining: selectedDuration, running: false }, { merge: true });
+    }
+  }
+
+  function updateLocalPreview() {
+    document.getElementById('f-preview-digits').textContent = formatTime(selectedDuration);
+    document.getElementById('f-preview-progress').style.width = '100%';
+    document.getElementById('f-preview-display').className = 'timer-display';
+    document.getElementById('f-preview-done').textContent = '';
+  }
+
+  // ── Tab switching ──
+  function switchTab(tab) {
+    currentTab = tab;
+    ['setup', 'preview', 'share'].forEach(t => {
+      document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
+    });
+    document.querySelectorAll('.tab').forEach((btn, i) => {
+      btn.classList.toggle('active', ['setup', 'preview', 'share'][i] === tab);
+    });
+  }
+
+  // ── Copy URL ──
+  function copyUrl(el) {
+    navigator.clipboard.writeText(el.value).catch(() => {});
+    const hint = document.getElementById('f-copy-hint');
+    hint.textContent = 'Copied!';
+    setTimeout(() => hint.textContent = 'Tap to copy link', 2000);
+  }
+
+  // ── Show correct view ──
+  function showView(id) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // ── Init ──
+  function init() {
+    if (IS_FACILITATOR && sessionId) {
+      showView('view-facilitator');
+
+      // Build share URL
+      const shareUrl = new URL(location.href);
+      shareUrl.searchParams.delete('facilitator');
+      const url = shareUrl.toString();
+      document.getElementById('f-share-url').value = url;
+      document.getElementById('f-qr').src =
+        `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(url)}&size=180x180&margin=8`;
+
+      // Initialize Firestore doc if not exists
+      sessionRef().get().then(doc => {
+        if (!doc.exists) {
+          return sessionRef().set({
+            label: '',
+            duration: selectedDuration,
+            remaining: selectedDuration,
+            running: false,
+            startedAt: null
+          });
+        }
+      });
+
+      // Subscribe
+      sessionRef().onSnapshot(doc => {
+        if (doc.exists) {
+          cachedState = doc.data();
+          // Sync label input with Firestore if changed externally
+          const labelInput = document.getElementById('f-label');
+          if (document.activeElement !== labelInput) {
+            labelInput.value = cachedState.label || '';
+          }
+          startLocalTick();
+          tick();
+        }
+      }, err => console.error('Firestore error:', err));
+
+    } else if (!IS_FACILITATOR && sessionId) {
+      showView('view-participant');
+
+      sessionRef().onSnapshot(doc => {
+        if (doc.exists) {
+          cachedState = doc.data();
+          const dur = cachedState.duration || selectedDuration;
+          const rem = computeRemaining(cachedState);
+          const hasStarted = cachedState.duration && (cachedState.running || cachedState.remaining < cachedState.duration);
+
+          if (hasStarted || cachedState.running) {
+            document.getElementById('p-waiting').style.display = 'none';
+            document.getElementById('p-timer-wrap').style.display = 'block';
+            document.getElementById('p-subtitle').textContent = 'Live timer';
+          } else if (rem <= 0) {
+            document.getElementById('p-waiting').style.display = 'none';
+            document.getElementById('p-timer-wrap').style.display = 'block';
+            document.getElementById('p-subtitle').textContent = 'Timer ended';
+          } else {
+            document.getElementById('p-waiting').style.display = 'block';
+            document.getElementById('p-timer-wrap').style.display = 'none';
+            document.getElementById('p-subtitle').textContent = 'Waiting for facilitator…';
+          }
+
+          startLocalTick();
+          tick();
+        }
+      }, err => console.error('Firestore error:', err));
+
+    } else {
+      showView('view-nosession');
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
