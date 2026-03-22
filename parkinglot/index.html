@@ -302,6 +302,25 @@
       color: #1e4a5a;
     }
 
+    /* ── Facilitator badge ── */
+    .facilitator-badge {
+      position: fixed;
+      top: 12px;
+      right: 14px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 4px 10px;
+      opacity: 0.7;
+      pointer-events: none;
+      z-index: 10;
+    }
+
     /* ── Count summary ── */
     .lot-summary {
       display: flex;
@@ -363,6 +382,8 @@
   <!-- ── FACILITATOR VIEW ── -->
   <div class="view" id="v-facilitator">
 
+    <div class="facilitator-badge">Facilitator view</div>
+
     <a href="../index.html" style="display:inline-flex; align-items:center; gap:5px; font-size:13px; color:var(--muted); text-decoration:none; margin-bottom:4px;">← Back to toolkit</a>
 
     <div class="header">
@@ -375,6 +396,14 @@
       <span class="qr-label">Scan to submit</span>
       <img id="f-qr-img" width="180" height="180" alt="Participant QR code">
       <p id="f-qr-url" class="qr-url"></p>
+    </div>
+
+    <!-- Facilitator input -->
+    <div class="card">
+      <span class="field-label">Add to parking lot</span>
+      <textarea id="fac-input" maxlength="280" placeholder="e.g. We'll revisit the timeline question after the break" oninput="onFacInput()"></textarea>
+      <div class="char-count" id="fac-char-count">0 / 280</div>
+      <button class="btn btn-green" id="fac-submit-btn" onclick="submitFacItem()" disabled style="margin-top:12px">Park it</button>
     </div>
 
     <div id="fac-empty" class="card">
@@ -514,6 +543,36 @@
     document.getElementById('submit-btn').disabled = true;
     document.getElementById('p-form').style.display = 'flex';
     document.getElementById('p-done').style.display = 'none';
+  }
+
+  // ── Facilitator input ────────────────────────────────────────
+  function onFacInput() {
+    const val = document.getElementById('fac-input').value;
+    const len = val.length;
+    const cc = document.getElementById('fac-char-count');
+    cc.textContent = len + ' / 280';
+    cc.classList.toggle('warn', len > 240);
+    document.getElementById('fac-submit-btn').disabled = val.trim().length === 0;
+  }
+
+  async function submitFacItem() {
+    const text = document.getElementById('fac-input').value.trim();
+    if (!text || !sessionId) return;
+    const btn = document.getElementById('fac-submit-btn');
+    btn.disabled = true;
+    const newItem = {
+      id: Date.now().toString() + Math.random().toString(36).slice(2, 5),
+      text,
+      status: 'open',
+      ts: Date.now()
+    };
+    await sessionRef().set(
+      { items: firebase.firestore.FieldValue.arrayUnion(newItem) },
+      { merge: true }
+    );
+    document.getElementById('fac-input').value = '';
+    document.getElementById('fac-char-count').textContent = '0 / 280';
+    document.getElementById('fac-char-count').classList.remove('warn');
   }
 
   // ── Facilitator ──────────────────────────────────────────────
