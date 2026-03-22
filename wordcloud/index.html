@@ -580,6 +580,34 @@
   // ── Facilitator tab state ─────────────────────────────────────
   let fTab = 'fv';
 
+  // ── Word cloud listener lifecycle ────────────────────────────
+  let wcUnsubscribe = null;
+
+  function startWordCloudListener() {
+    if (wcUnsubscribe || !sessionId) return;
+    wcUnsubscribe = sessionRef().onSnapshot(doc => {
+      if (doc.exists) {
+        const d = doc.data();
+        cachedState = {
+          q:      d.q      || '',
+          qid:    d.qid    || '',
+          words:  d.words  || {},
+          active: d.active || false
+        };
+      } else {
+        cachedState = { q: '', qid: '', words: {}, active: false };
+      }
+      renderWordCloud();
+    }, err => console.error('WC listener error:', err));
+  }
+
+  function stopWordCloudListener() {
+    if (wcUnsubscribe) {
+      wcUnsubscribe();
+      wcUnsubscribe = null;
+    }
+  }
+
   // ── View routing ──────────────────────────────────────────────
   function showView(name) {
     ['participant', 'facilitator', 'nosession'].forEach(n => {
@@ -589,6 +617,7 @@
 
   // ── Facilitator tab switching ─────────────────────────────────
   function switchFacTab(tab) {
+    const leavingWordCloud = fTab === 'wordcloud' && tab !== 'wordcloud';
     fTab = tab;
     ['fv', 'preview', 'wordcloud'].forEach(t => {
       document.getElementById('ft-' + t).classList.toggle('on', t === tab);
@@ -596,7 +625,10 @@
     document.body.classList.toggle('wc-mode', tab === 'wordcloud');
     updateNavBar();
     if (tab === 'wordcloud') {
+      startWordCloudListener();
       setTimeout(renderWordCloud, 30); // wait for layout
+    } else if (leavingWordCloud) {
+      stopWordCloudListener();
     }
   }
 
@@ -742,10 +774,6 @@
       prevWaiting.style.display  = 'block';
     }
 
-    // Word cloud tab
-    if (fTab === 'wordcloud') {
-      renderWordCloud();
-    }
   }
 
   // ── Word cloud rendering ──────────────────────────────────────
