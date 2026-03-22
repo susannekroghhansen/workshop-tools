@@ -359,6 +359,18 @@
       letter-spacing: 0.02em;
     }
 
+    /* ── Back to toolkit link ── */
+    .back-link {
+      position: fixed;
+      top: 14px;
+      left: 16px;
+      font-size: 11px;
+      color: var(--muted);
+      text-decoration: none;
+      z-index: 20;
+    }
+    .back-link:hover { color: var(--green); }
+
     /* ── Facilitator badge ── */
     .facilitator-badge {
       position: fixed;
@@ -857,6 +869,13 @@
   function init() {
     if (IS_FACILITATOR && sessionId) {
       showView('view-facilitator');
+
+      // Add back to toolkit link
+      const backLink = document.createElement('a');
+      backLink.className = 'back-link';
+      backLink.href = 'https://susannekroghhansen.github.io/workshop-tools/';
+      backLink.textContent = '← Toolkit';
+      document.body.appendChild(backLink);
 
       // Add facilitator badge
       const badge = document.createElement('div');
