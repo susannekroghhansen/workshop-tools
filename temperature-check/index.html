@@ -493,7 +493,7 @@
       font-weight: 500;
     }
 
-    .toggle-preview-bar {
+    .facilitator-nav-bar {
       position: fixed;
       bottom: 0;
       left: 0;
@@ -503,12 +503,79 @@
       padding: 10px 16px;
       display: flex;
       justify-content: center;
+      gap: 8px;
       z-index: 10;
     }
 
-    .toggle-preview-bar .btn-ghost {
-      max-width: 280px;
+    .nav-tab {
+      padding: 10px 18px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
       font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      color: var(--muted);
+      background: transparent;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+
+    .nav-tab:hover { background: var(--bg); color: var(--text); }
+
+    .nav-tab.active {
+      background: var(--blue);
+      color: #fff;
+      border-color: var(--blue);
+    }
+
+    /* ── Word cloud projection view ── */
+    body.wc-mode main {
+      max-width: none;
+      padding: 0;
+    }
+
+    .wc-projection {
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100dvh - 5rem);
+    }
+
+    .wc-avg-strip {
+      height: 56px;
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 8px;
+      padding: 15px 0;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+    }
+
+    .wc-avg-num {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--blue);
+      line-height: 1;
+      letter-spacing: -.02em;
+    }
+
+    .wc-avg-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .wc-cloud-area {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 48px;
+    }
+
+    .wc-cloud-area .word-cloud {
+      gap: 16px 24px;
     }
   </style>
 </head>
@@ -736,14 +803,16 @@
       </div>`;
   }
 
-  function buildWordCloud(ws) {
+  function buildWordCloud(ws, projection) {
     if (!ws.length) return '';
     const freq = {};
     ws.forEach(w => { const k = w.toLowerCase(); freq[k] = (freq[k]||0)+1; });
     const entries = Object.entries(freq).sort((a,b) => b[1]-a[1]);
     const maxF = entries[0][1];
+    const minSize = projection ? 28 : 14;
+    const range   = projection ? 44 : 20;
     return entries.map(([word, count]) => {
-      const size = Math.round(14 + (count/maxF)*20);
+      const size = Math.round(minSize + (count/maxF)*range);
       const opacity = 0.55 + (count/maxF)*0.45;
       return `<span style="font-size:${size}px; opacity:${opacity}">${escapeHtml(word)}</span>`;
     }).join('');
@@ -795,18 +864,52 @@
       </div>`;
   }
 
-  function togglePreview() {
-    fPreview = !fPreview;
+  function renderWordCloudView() {
     const badge = document.querySelector('.facilitator-badge');
-    if (badge) badge.style.display = fPreview ? 'none' : '';
-    const btn = document.getElementById('toggle-preview-btn');
-    if (btn) btn.textContent = fPreview ? 'Back to facilitator view' : 'Preview participant view';
+    if (badge) badge.style.display = 'none';
+    const app = document.getElementById('app');
+    const s = st();
+    const sc = scores(s.rs);
+    const ws = words(s.rs);
+    const n = s.rs.length;
+    const avg = n ? sc.reduce((a,b) => a+b, 0) / n : null;
+    const wordCloudHtml = buildWordCloud(ws, true);
+    app.innerHTML = `
+      <div class="wc-projection">
+        <div class="wc-avg-strip">
+          <span class="wc-avg-num">${avg !== null ? avg.toFixed(1) : '—'}</span>
+          <span class="wc-avg-label">average</span>
+        </div>
+        <div class="wc-cloud-area">
+          ${wordCloudHtml
+            ? `<div class="word-cloud">${wordCloudHtml}</div>`
+            : `<p style="color:var(--muted); font-size:16px; text-align:center">No words submitted yet</p>`}
+        </div>
+      </div>`;
+  }
+
+  function switchView(view) {
+    fView = view;
+    const badge = document.querySelector('.facilitator-badge');
+    if (badge) badge.style.display = view === 'facilitator' ? '' : 'none';
+    updateNavBar();
     renderFacilitatorMode();
+  }
+
+  function updateNavBar() {
+    const bar = document.querySelector('.facilitator-nav-bar');
+    if (!bar) return;
+    bar.innerHTML = `
+      <button class="nav-tab${fView==='facilitator'?' active':''}" onclick="switchView('facilitator')">Facilitator view</button>
+      <button class="nav-tab${fView==='preview'?' active':''}" onclick="switchView('preview')">Participant preview</button>
+      <button class="nav-tab${fView==='wordcloud'?' active':''}" onclick="switchView('wordcloud')">Word cloud</button>`;
   }
 
   // ── FACILITATOR MODE ───────────────────────────────────────
   function renderFacilitatorMode() {
-    if (fPreview) { renderFacilitatorPreview(); return; }
+    document.body.classList.toggle('wc-mode', fView === 'wordcloud');
+    if (fView === 'preview') { renderFacilitatorPreview(); return; }
+    if (fView === 'wordcloud') { renderWordCloudView(); return; }
     const badge = document.querySelector('.facilitator-badge');
     if (badge) badge.style.display = '';
     const app = document.getElementById('app');
@@ -816,7 +919,7 @@
     const ws = words(s.rs);
     const avg = n ? sc.reduce((a,b) => a+b, 0)/n : null;
 
-    const participantUrl = location.origin + location.pathname;
+    const participantUrl = 'https://susannekroghhansen.github.io/workshop-tools/temperature-check/';
 
     const activeCardHtml = s.on && s.q ? `
       <div class="card">
@@ -901,7 +1004,7 @@
   // Facilitator's own score state (persists across re-renders)
   let fPicked = null;
   let fDidSubmit = false;
-  let fPreview = false;
+  let fView = 'facilitator'; // 'facilitator' | 'preview' | 'wordcloud'
 
   function fPick(n) {
     fPicked = n;
@@ -1126,16 +1229,20 @@ Return ONLY a JSON array. No prose, no markdown fences. Each element:
   // Polling fallback
   setInterval(() => {
     if (IS_FACILITATOR) {
-      const s = st();
-      const liveCount = document.getElementById('live-count');
-      if (liveCount) {
-        const n = s.rs.length;
-        liveCount.textContent = n + (n===1?' response':' responses');
+      if (fView === 'wordcloud') {
+        renderWordCloudView();
+      } else {
+        const s = st();
+        const liveCount = document.getElementById('live-count');
+        if (liveCount) {
+          const n = s.rs.length;
+          liveCount.textContent = n + (n===1?' response':' responses');
+        }
+        // Full re-render if results section may need updating
+        const sc = scores(s.rs);
+        const avg = sc.length ? sc.reduce((a,b)=>a+b,0)/sc.length : null;
+        maybeShowMoves(s, sc, avg);
       }
-      // Full re-render if results section may need updating
-      const sc = scores(s.rs);
-      const avg = sc.length ? sc.reduce((a,b)=>a+b,0)/sc.length : null;
-      maybeShowMoves(s, sc, avg);
     } else if (IS_RESULTS) {
       renderResultsMode();
     }
@@ -1165,9 +1272,9 @@ Return ONLY a JSON array. No prose, no markdown fences. Each element:
     document.body.appendChild(badge);
 
     const bar = document.createElement('div');
-    bar.className = 'toggle-preview-bar';
-    bar.innerHTML = '<button class="btn-ghost" id="toggle-preview-btn" onclick="togglePreview()">Preview participant view</button>';
+    bar.className = 'facilitator-nav-bar';
     document.body.appendChild(bar);
+    updateNavBar();
 
     document.getElementById('app').style.paddingBottom = '5rem';
   }
