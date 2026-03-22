@@ -356,6 +356,9 @@
     .chip-comeback { background: #edf8f2; color: #2a5c40; }
     .chip-covered  { background: #d6eaf0; color: #1e4a5a; }
   </style>
+  <!-- Firebase SDK (Firestore for real-time cross-device sync) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -403,6 +406,13 @@
       <p id="fac-summary-text">Submissions will appear here</p>
     </div>
 
+    <div id="f-qr-card" class="card" style="display:none">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:10px; padding:8px 0">
+        <img id="f-qr-img" width="160" height="160" style="border-radius:8px;" alt="Participant QR code">
+        <p id="f-qr-url" style="font-size:12px; color:var(--muted); text-align:center; word-break:break-all"></p>
+      </div>
+    </div>
+
     <div id="fac-empty" class="card">
       <div class="empty">
         <div class="empty-icon">🅿️</div>
@@ -443,19 +453,55 @@
 </nav>
 
 <script>
-  const KEY = 'workshop_parkinglot_v1';
+  // ── Firebase Setup ───────────────────────────────────────────
+  // Same Firebase project as temperature-check — replace with your config.
+  // See temperature-check/index.html for setup instructions.
+  const firebaseConfig = {
+    apiKey:            "AIzaSyBzc_CmZhahAyUNLcGL0vbP25Nj_qBMe7M",
+    authDomain:        "workshop-tools-ff457.firebaseapp.com",
+    projectId:         "workshop-tools-ff457",
+    storageBucket:     "workshop-tools-ff457.firebasestorage.app",
+    messagingSenderId: "142740807274",
+    appId:             "1:142740807274:web:149757a3b123db843af413"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
 
-  // ── state ──────────────────────────────────────────────────
-  function load() {
-    try {
-      const d = JSON.parse(localStorage.getItem(KEY));
-      if (Array.isArray(d)) return d;
-    } catch (_) {}
-    return [];
+  // ── Session ID ──────────────────────────────────────────────
+  const params = new URLSearchParams(location.search);
+  const IS_FACILITATOR = params.get('facilitator') === '1234';
+
+  let sessionId = params.get('session');
+  if (!sessionId && IS_FACILITATOR) {
+    sessionId = Math.random().toString(36).slice(2, 8).toUpperCase();
+    const newUrl = new URL(location.href);
+    newUrl.searchParams.set('session', sessionId);
+    history.replaceState({}, '', newUrl);
   }
 
-  function save(items) {
-    localStorage.setItem(KEY, JSON.stringify(items));
+  const PL_BASE_URL = 'https://susannekroghhansen.github.io/workshop-tools/parkinglot/';
+
+  function sessionRef() {
+    return db.collection('pl_sessions').doc(sessionId);
+  }
+
+  // ── Cached items (updated by Firestore onSnapshot) ──────────
+  let cachedItems = [];
+
+  // ── Firestore: real-time subscription ──────────────────────
+  function subscribeToSession() {
+    if (!sessionId) return;
+    sessionRef().onSnapshot(doc => {
+      cachedItems = doc.exists ? (doc.data().items || []) : [];
+      if (document.getElementById('v-facilitator').classList.contains('on')) {
+        renderFacilitator();
+      }
+    }, err => console.error('Firestore error:', err));
+  }
+
+  // ── Utility ─────────────────────────────────────────────────
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
   // ── participant ────────────────────────────────────────────
@@ -468,12 +514,14 @@
     document.getElementById('submit-btn').disabled = val.trim().length === 0;
   }
 
-  function submitItem() {
+  async function submitItem() {
     const text = document.getElementById('p-input').value.trim();
-    if (!text) return;
-    const items = load();
-    items.push({ id: Date.now().toString(), text, status: 'open', ts: Date.now() });
-    save(items);
+    if (!text || !sessionId) return;
+    const newItem = { id: Date.now().toString() + Math.random().toString(36).slice(2,5), text, status: 'open', ts: Date.now() };
+    await sessionRef().set(
+      { items: firebase.firestore.FieldValue.arrayUnion(newItem) },
+      { merge: true }
+    );
     document.getElementById('p-form').style.display = 'none';
     document.getElementById('p-done').style.display = 'block';
   }
@@ -489,18 +537,13 @@
   }
 
   // ── facilitator ────────────────────────────────────────────
-  function setStatus(id, status) {
-    const items = load();
-    const item = items.find(i => i.id === id);
-    if (!item) return;
-    item.status = item.status === status ? 'open' : status;
-    save(items);
-    renderFacilitator();
+  async function setStatus(id, status) {
+    const items = cachedItems.map(i => i.id === id ? { ...i, status: i.status === status ? 'open' : status } : i);
+    await sessionRef().set({ items }, { merge: true });
   }
 
   function renderFacilitator() {
-    const items = load();
-
+    const items = cachedItems;
     const fEmpty   = document.getElementById('fac-empty');
     const fContent = document.getElementById('fac-content');
     const summaryText = document.getElementById('fac-summary-text');
@@ -522,14 +565,12 @@
 
     summaryText.textContent = total === 1 ? '1 item parked' : `${total} items parked`;
 
-    // Summary chips
     const summaryEl = document.getElementById('lot-summary');
     summaryEl.innerHTML = '';
     if (open.length)     summaryEl.innerHTML += `<span class="summary-chip chip-open">${open.length} open</span>`;
     if (comeback.length) summaryEl.innerHTML += `<span class="summary-chip chip-comeback">${comeback.length} coming back</span>`;
     if (covered.length)  summaryEl.innerHTML += `<span class="summary-chip chip-covered">${covered.length} covered</span>`;
 
-    // Sections
     renderSection('open-section', 'open-cards', open);
     renderSection('comeback-section', 'comeback-cards', comeback);
     renderSection('covered-section', 'covered-cards', covered);
@@ -546,10 +587,8 @@
   function makeCard(item) {
     const div = document.createElement('div');
     div.className = 'lot-card' + (item.status === 'covered' ? ' covered' : '');
-
     const isComeback = item.status === 'comeback';
     const isCovered  = item.status === 'covered';
-
     div.innerHTML = `
       <div class="lot-card-body">${escHtml(item.text)}</div>
       <div class="lot-card-actions">
@@ -566,14 +605,34 @@
     return div;
   }
 
-  function escHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  async function clearAll() {
+    if (!confirm('Clear all parked items?')) return;
+    await sessionRef().set({ items: [] }, { merge: true });
   }
 
-  function clearAll() {
-    if (!confirm('Clear all parked items?')) return;
-    save([]);
-    renderFacilitator();
+  // ── QR code ─────────────────────────────────────────────────
+  function showFacilitatorQR() {
+    if (!sessionId) return;
+    const participantUrl = `${PL_BASE_URL}?session=${sessionId}`;
+    const qrCard = document.getElementById('f-qr-card');
+    const qrImg  = document.getElementById('f-qr-img');
+    const qrUrl  = document.getElementById('f-qr-url');
+    if (!qrCard) return;
+    qrCard.style.display = 'block';
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(participantUrl)}&color=2e3d38&bgcolor=ffffff&margin=2`;
+    qrUrl.textContent = participantUrl;
+  }
+
+  // ── Participant: no session state ───────────────────────────
+  function showNoSession() {
+    const form = document.getElementById('p-form');
+    if (form) form.innerHTML = `
+      <div class="card">
+        <div class="empty">
+          <div class="empty-icon" style="font-size:32px">🔗</div>
+          <p class="empty-msg">No session found.<br>Please scan the QR code<br>from the facilitator's screen.</p>
+        </div>
+      </div>`;
   }
 
   // ── navigation ─────────────────────────────────────────────
@@ -582,26 +641,17 @@
       document.getElementById('v-' + n).classList.toggle('on', n === v);
       document.getElementById('t-' + n).classList.toggle('on', n === v);
     });
-    if (v === 'facilitator') renderFacilitator();
+    if (v === 'facilitator') {
+      renderFacilitator();
+      showFacilitatorQR();
+    }
   }
 
-  // ── cross-tab sync ─────────────────────────────────────────
-  window.addEventListener('storage', e => {
-    if (e.key !== KEY) return;
-    const active = document.getElementById('v-facilitator').classList.contains('on');
-    if (active) renderFacilitator();
-  });
-
-  // Polling fallback for same-tab updates and multi-device refresh
-  setInterval(() => {
-    if (document.getElementById('v-facilitator').classList.contains('on')) {
-      renderFacilitator();
-    }
-  }, 3000);
-
   // ── boot ───────────────────────────────────────────────────
-  if (new URLSearchParams(location.search).get('facilitator') === '1234') go('facilitator');
-  renderFacilitator();
+  if (!sessionId && !IS_FACILITATOR) showNoSession();
+  subscribeToSession();
+  if (IS_FACILITATOR) go('facilitator');
+  else renderFacilitator();
 </script>
 
 </body>

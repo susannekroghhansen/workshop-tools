@@ -578,36 +578,55 @@
       gap: 16px 24px;
     }
   </style>
+  <!-- Firebase SDK (Firestore for real-time cross-device sync) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
 <main id="app"></main>
 
 <script>
+  // ── Firebase Setup ───────────────────────────────────────────
+  // 1. Create a free Firebase project at https://console.firebase.google.com
+  // 2. Add a Web App, copy the config below
+  // 3. Enable Firestore in the Firebase console (Start in test mode)
+  const firebaseConfig = {
+    apiKey:            "AIzaSyBzc_CmZhahAyUNLcGL0vbP25Nj_qBMe7M",
+    authDomain:        "workshop-tools-ff457.firebaseapp.com",
+    projectId:         "workshop-tools-ff457",
+    storageBucket:     "workshop-tools-ff457.firebasestorage.app",
+    messagingSenderId: "142740807274",
+    appId:             "1:142740807274:web:149757a3b123db843af413"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
   // ── URL-based mode detection ────────────────────────────────
   const params = new URLSearchParams(location.search);
   const IS_FACILITATOR = params.get('facilitator') === '1234';
   const IS_RESULTS     = params.get('view') === 'results';
 
-  // Storage keys
-  const K = { Q: 'tc_q', QID: 'tc_qid', R: 'tc_r', ON: 'tc_on' };
-
-  let picked       = null;
-  let pendingScore = null;
-
-  const BAR_COLORS = ['#c09898', '#7aaac0', '#8ab8cc', '#9ecfb8', '#8ec8a8'];
-  let movesLastKey   = null;
-  let movesPrevNames = [];
-
-  // ── state ──────────────────────────────────────────────────
-  function st() {
-    return {
-      q:   localStorage.getItem(K.Q)  || '',
-      qid: localStorage.getItem(K.QID) || '',
-      rs:  JSON.parse(localStorage.getItem(K.R) || '[]'),
-      on:  localStorage.getItem(K.ON) === '1'
-    };
+  // ── Session ID ──────────────────────────────────────────────
+  // Facilitator generates a new session ID on first visit and puts it in the URL.
+  // Participants join via the QR code which contains the same session ID.
+  let sessionId = params.get('session');
+  if (!sessionId && IS_FACILITATOR) {
+    sessionId = Math.random().toString(36).slice(2, 8).toUpperCase();
+    const newUrl = new URL(location.href);
+    newUrl.searchParams.set('session', sessionId);
+    history.replaceState({}, '', newUrl);
   }
+
+  const BASE_URL = 'https://susannekroghhansen.github.io/workshop-tools/temperature-check/';
+
+  function sessionRef() {
+    return db.collection('tc_sessions').doc(sessionId);
+  }
+
+  // ── Cached state (updated by Firestore onSnapshot) ──────────
+  let cachedState = { q: '', qid: '', rs: [], on: false };
+  function st() { return cachedState; }
 
   function scores(rs) { return rs.map(r => typeof r === 'object' ? r.s : r); }
   function words(rs)  { return rs.map(r => typeof r === 'object' ? r.w : '').filter(w => w); }
@@ -621,11 +640,70 @@
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  let picked       = null;
+  let pendingScore = null;
+
+  const BAR_COLORS = ['#c09898', '#7aaac0', '#8ab8cc', '#9ecfb8', '#8ec8a8'];
+  let movesLastKey   = null;
+  let movesPrevNames = [];
+
+  let fPicked    = null;
+  let fDidSubmit = false;
+  let fView      = 'facilitator'; // 'facilitator' | 'preview' | 'wordcloud'
+
+  // ── Firestore: real-time subscription ──────────────────────
+  function subscribeToSession() {
+    if (!sessionId) { renderApp(); return; }
+    sessionRef().onSnapshot(doc => {
+      if (doc.exists) {
+        const d = doc.data();
+        cachedState = {
+          q:   d.q   || '',
+          qid: d.qid || '',
+          rs:  d.responses || [],
+          on:  d.active || false
+        };
+      } else {
+        cachedState = { q: '', qid: '', rs: [], on: false };
+      }
+      renderApp();
+    }, err => console.error('Firestore error:', err));
+  }
+
+  // ── Firestore: write operations ─────────────────────────────
+  async function activateQ() {
+    const text = document.getElementById('q-input')?.value.trim();
+    if (!text) return;
+    fPicked = null; fDidSubmit = false; movesLastKey = null; movesPrevNames = [];
+    await sessionRef().set({ q: text, qid: Date.now().toString(), responses: [], active: true });
+  }
+
+  async function resetQ() {
+    if (!confirm('Clear the current question and all responses?')) return;
+    fPicked = null; fDidSubmit = false; movesLastKey = null; movesPrevNames = [];
+    await sessionRef().set({ q: '', qid: '', responses: [], active: false });
+  }
+
   // ── render dispatch ────────────────────────────────────────
   function renderApp() {
+    if (!sessionId) { renderNoSession(); return; }
     if (IS_FACILITATOR) renderFacilitatorMode();
     else if (IS_RESULTS) renderResultsMode();
     else renderParticipantMode();
+  }
+
+  // ── NO SESSION view ─────────────────────────────────────────
+  function renderNoSession() {
+    document.getElementById('app').innerHTML = `
+      <div class="view on">
+        <div class="header"><h1>Temperature Check</h1></div>
+        <div class="card">
+          <div class="empty">
+            <div class="empty-icon">🔗</div>
+            <p class="empty-msg">No session found.<br>Please scan the QR code<br>from the facilitator's screen.</p>
+          </div>
+        </div>
+      </div>`;
   }
 
   // ── PARTICIPANT MODE ───────────────────────────────────────
@@ -718,16 +796,17 @@
     renderParticipantMode();
   }
 
-  function commitResponse(word) {
+  async function commitResponse(word) {
     const s = st();
     if (!s.on || pendingScore === null) return;
-    const rs = s.rs;
-    rs.push({ s: pendingScore, w: word.trim() });
-    localStorage.setItem(K.R, JSON.stringify(rs));
     markResponded();
+    const score = pendingScore;
     pendingScore = null;
-    // Redirect to results view
-    location.href = location.pathname + '?view=results';
+    await sessionRef().set(
+      { responses: firebase.firestore.FieldValue.arrayUnion({ s: score, w: word.trim() }) },
+      { merge: true }
+    );
+    location.href = location.pathname + '?view=results&session=' + sessionId;
   }
 
   function doWordSubmit() {
@@ -919,13 +998,13 @@
     const ws = words(s.rs);
     const avg = n ? sc.reduce((a,b) => a+b, 0)/n : null;
 
-    const participantUrl = 'https://susannekroghhansen.github.io/workshop-tools/temperature-check/';
+    const participantUrl = `${BASE_URL}?session=${sessionId}`;
 
     const activeCardHtml = s.on && s.q ? `
       <div class="card">
         <div class="status-bar">
           <span><span class="dot"></span>Question active</span>
-          <span id="live-count">${n + (n===1?' response':' responses')}</span>
+          <span>${n + (n===1?' response':' responses')}</span>
         </div>
         <p style="font-size:14px; color:var(--muted); font-style:italic; line-height:1.45">${escapeHtml(s.q)}</p>
         <div style="height:14px"></div>
@@ -1001,11 +1080,6 @@
     maybeShowMoves(s, sc, avg);
   }
 
-  // Facilitator's own score state (persists across re-renders)
-  let fPicked = null;
-  let fDidSubmit = false;
-  let fView = 'facilitator'; // 'facilitator' | 'preview' | 'wordcloud'
-
   function fPick(n) {
     fPicked = n;
     document.querySelectorAll('#f-score-row .score-btn').forEach((b, i) =>
@@ -1014,16 +1088,16 @@
     if (btn) btn.disabled = false;
   }
 
-  function fSubmit() {
+  async function fSubmit() {
     if (!fPicked) return;
     const s = st();
     if (!s.on) return;
-    const rs = s.rs;
-    rs.push({ s: fPicked, w: '' });
-    localStorage.setItem(K.R, JSON.stringify(rs));
-    fPicked = null;
-    fDidSubmit = true;
-    renderFacilitatorMode();
+    const score = fPicked;
+    fPicked = null; fDidSubmit = true;
+    await sessionRef().set(
+      { responses: firebase.firestore.FieldValue.arrayUnion({ s: score, w: '' }) },
+      { merge: true }
+    );
   }
 
   function buildFacilitatorResults(s, sc, ws, avg) {
@@ -1089,32 +1163,7 @@
   }
 
   // ── facilitator actions ────────────────────────────────────
-  function activateQ() {
-    const text = document.getElementById('q-input').value.trim();
-    if (!text) return;
-    localStorage.setItem(K.Q,   text);
-    localStorage.setItem(K.QID, Date.now().toString());
-    localStorage.setItem(K.R,   '[]');
-    localStorage.setItem(K.ON,  '1');
-    fPicked = null;
-    fDidSubmit = false;
-    movesLastKey   = null;
-    movesPrevNames = [];
-    renderFacilitatorMode();
-  }
-
-  function resetQ() {
-    if (!confirm('Clear the current question and all responses?')) return;
-    localStorage.setItem(K.ON, '0');
-    localStorage.removeItem(K.Q);
-    localStorage.removeItem(K.QID);
-    localStorage.setItem(K.R, '[]');
-    fPicked = null;
-    fDidSubmit = false;
-    movesLastKey   = null;
-    movesPrevNames = [];
-    renderFacilitatorMode();
-  }
+  // (activateQ and resetQ are defined above as async Firestore writes)
 
   // ── suggested moves ────────────────────────────────────────
   function fetchSuggestedMoves(question, rs, avg, exclude) {
@@ -1192,78 +1241,31 @@ Return ONLY a JSON array. No prose, no markdown fences. Each element:
     fetchSuggestedMoves(s.q, sc, avg, movesPrevNames);
   }
 
-  // ── QR code (pure JS, no library) ─────────────────────────
-  // Minimal QR renderer using the qrcode-generator approach via data URI
+  // ── QR code ────────────────────────────────────────────────
   function renderQR(url) {
     const canvas = document.getElementById('qr-canvas');
     if (!canvas) return;
-    // Use Google Charts QR (no external lib needed, self-contained fallback via img)
-    // We'll draw it as an <img> instead and replace the canvas
     const img = document.createElement('img');
     img.width  = 180;
     img.height = 180;
     img.style.borderRadius = '8px';
-    // Use a QR API that works without CORS issues
     img.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}&color=2e3d38&bgcolor=ffffff&margin=2`;
     img.alt = 'QR code for participant URL';
     canvas.replaceWith(img);
   }
 
-  // ── cross-tab sync (participant and results modes) ─────────
-  window.addEventListener('storage', e => {
-    if (!Object.values(K).includes(e.key)) return;
-    if (IS_FACILITATOR) {
-      renderFacilitatorMode();
-    } else if (IS_RESULTS) {
-      renderResultsMode();
-    } else {
-      // Auto-navigate participant to respond when a new question is activated
-      if (e.key === K.ON && e.newValue === '1') {
-        // New question — clear responded state if needed, reload
-        location.href = location.pathname;
-      }
-      renderParticipantMode();
-    }
-  });
-
-  // Polling fallback
-  setInterval(() => {
-    if (IS_FACILITATOR) {
-      if (fView === 'wordcloud') {
-        renderWordCloudView();
-      } else {
-        const s = st();
-        const liveCount = document.getElementById('live-count');
-        if (liveCount) {
-          const n = s.rs.length;
-          liveCount.textContent = n + (n===1?' response':' responses');
-        }
-        // Full re-render if results section may need updating
-        const sc = scores(s.rs);
-        const avg = sc.length ? sc.reduce((a,b)=>a+b,0)/sc.length : null;
-        maybeShowMoves(s, sc, avg);
-      }
-    } else if (IS_RESULTS) {
-      renderResultsMode();
-    } else {
-      // Participant: poll so the question appears immediately if set before page load
-      renderParticipantMode();
-    }
-  }, 2000);
-
   // ── dev test mode ──────────────────────────────────────────
   if (params.has('test') && IS_FACILITATOR) {
-    window.injectTestResponses = function() {
+    window.injectTestResponses = async function() {
       const s = st();
       if (!s.on || !s.q) { alert('Activate a question first.'); return; }
-      localStorage.setItem(K.R, JSON.stringify([
+      await sessionRef().update({ responses: [
         { s:1, w:'confusing' }, { s:1, w:'unclear' },
         { s:1, w:'confusing' }, { s:1, w:'rushed' },
         { s:5, w:'clear' },     { s:5, w:'clear' },
         { s:5, w:'solid' },     { s:5, w:'' }
-      ]));
+      ]});
       movesLastKey = null; movesPrevNames = [];
-      renderFacilitatorMode();
     };
   }
 
@@ -1283,7 +1285,7 @@ Return ONLY a JSON array. No prose, no markdown fences. Each element:
   }
 
   // ── boot ───────────────────────────────────────────────────
-  renderApp();
+  subscribeToSession();
 </script>
 
 </body>
