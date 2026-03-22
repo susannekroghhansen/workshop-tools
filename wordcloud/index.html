@@ -514,6 +514,7 @@
     <div class="fac-tab" id="ft-wordcloud">
       <div class="wc-question-strip">
         <p class="wc-subtitle" id="wc-subtitle">No active question</p>
+        <p id="wc-debug-counter" style="font-size:11px;color:var(--muted);margin-top:4px;font-family:monospace;">0 words received (0 snapshots)</p>
       </div>
       <div class="wc-canvas-area" id="wc-canvas-area">
         <div class="wc-empty" id="wc-empty">
@@ -582,10 +583,19 @@
 
   // ── Word cloud listener lifecycle ────────────────────────────
   let wcUnsubscribe = null;
+  let wcSnapshotCount = 0;
+
+  function updateDebugCounter() {
+    const wordCount = Object.values(cachedState.words || {}).reduce((sum, c) => sum + c, 0);
+    const el = document.getElementById('wc-debug-counter');
+    if (el) el.textContent = `${wordCount} words received (${wcSnapshotCount} snapshots)`;
+  }
 
   function startWordCloudListener() {
     if (wcUnsubscribe || !sessionId) return;
+    console.log('[WC] Starting listener on wc_sessions/' + sessionId);
     wcUnsubscribe = sessionRef().onSnapshot(doc => {
+      wcSnapshotCount++;
       if (doc.exists) {
         const d = doc.data();
         cachedState = {
@@ -594,9 +604,12 @@
           words:  d.words  || {},
           active: d.active || false
         };
+        console.log('[WC] Snapshot #' + wcSnapshotCount + ' — words:', cachedState.words);
       } else {
         cachedState = { q: '', qid: '', words: {}, active: false };
+        console.log('[WC] Snapshot #' + wcSnapshotCount + ' — doc does not exist');
       }
+      updateDebugCounter();
       renderWordCloud();
     }, err => console.error('WC listener error:', err));
   }
@@ -605,6 +618,7 @@
     if (wcUnsubscribe) {
       wcUnsubscribe();
       wcUnsubscribe = null;
+      wcSnapshotCount = 0;
     }
   }
 
@@ -705,6 +719,7 @@
       update['words.' + w] = firebase.firestore.FieldValue.increment(1);
     });
 
+    console.log('[WC] Writing to wc_sessions/' + sessionId, update);
     try {
       await sessionRef().set(update, { merge: true });
       // Show confirmation
