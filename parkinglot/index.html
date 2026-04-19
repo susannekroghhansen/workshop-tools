@@ -293,7 +293,7 @@
     }
 
     .action-btn.covered-btn:hover {
-      background: #e8efed;
+      background: var(--primary-lt);
       color: var(--text);
     }
 
@@ -387,7 +387,7 @@
       font-weight: 600;
     }
 
-    .chip-open    { background: #e8efed; color: var(--text); }
+    .chip-open    { background: var(--primary-lt); color: var(--text); }
     .chip-comeback { background: #edf8f2; color: #2a5c40; }
     .chip-covered  { background: #d6eaf0; color: #1e4a5a; }
   </style>
@@ -759,7 +759,7 @@
     if (!sessionId) return;
     const participantUrl = `${PL_BASE_URL}?session=${sessionId}`;
     document.getElementById('f-qr-img').src =
-      `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(participantUrl)}&color=2e3d38&bgcolor=ffffff&margin=2`;
+      `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(participantUrl)}&color=3a1e30&bgcolor=ffffff&margin=2`;
     document.getElementById('f-qr-url').textContent = participantUrl;
   }
 

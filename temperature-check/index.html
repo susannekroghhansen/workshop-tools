@@ -195,7 +195,7 @@
       font-family: inherit;
     }
 
-    .score-btn:hover  { border-color: var(--primary); background: #e8f0ec; }
+    .score-btn:hover  { border-color: var(--primary); background: var(--primary-lt); }
     .score-btn.on     { background: var(--primary); border-color: var(--primary); color: #fff; }
 
     .scale-ends {
@@ -483,7 +483,7 @@
 
     /* ── Preview mode ── */
     .preview-banner {
-      background: #e8f0ec;
+      background: var(--primary-lt);
       border: 1.5px solid var(--border);
       border-radius: 10px;
       padding: 10px 16px;
@@ -1284,7 +1284,7 @@ Return ONLY a JSON array. No prose, no markdown fences. Each element:
     img.width  = 180;
     img.height = 180;
     img.style.borderRadius = '8px';
-    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}&color=2e3d38&bgcolor=ffffff&margin=2`;
+    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}&color=3a1e30&bgcolor=ffffff&margin=2`;
     img.alt = 'QR code for participant URL';
     canvas.replaceWith(img);
   }

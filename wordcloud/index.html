@@ -319,7 +319,7 @@
     .active-q-label {
       font-size: 11px;
       font-weight: 700;
-      color: #5e9977;
+      color: var(--primary);
       letter-spacing: .06em;
       text-transform: uppercase;
       margin-bottom: 6px;
@@ -824,7 +824,7 @@
   }
 
   // ── Word cloud rendering ──────────────────────────────────────
-  const WC_COLORS = ['#5e9977', '#3a6d52', '#7ab59a', '#4a7d61', '#2e6040', '#8ec4a8', '#1e4d36'];
+  const WC_COLORS = ['#6a2a4e', '#3a6d52', '#7ab59a', '#4e1d3a', '#2e6040', '#8ec4a8', '#1e4d36'];
 
   let wcLayout = null; // track current layout to abort on re-render
 
@@ -913,7 +913,7 @@
     if (!sessionId) return;
     const participantUrl = `${WC_BASE_URL}?session=${sessionId}`;
     document.getElementById('f-qr-img').src =
-      `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(participantUrl)}&color=2e3d38&bgcolor=ffffff&margin=2`;
+      `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(participantUrl)}&color=3a1e30&bgcolor=ffffff&margin=2`;
     document.getElementById('f-qr-url').textContent = participantUrl;
   }
 
