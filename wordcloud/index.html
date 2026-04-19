@@ -308,12 +308,12 @@
 
     /* ── Active question chip on facilitator tab ── */
     .active-q-chip {
-      background: #edf8f2;
-      border: 1.5px solid #c8e6d4;
+      background: var(--status-comeback-bg);
+      border: 1.5px solid var(--status-comeback);
       border-radius: 10px;
       padding: 12px 16px;
       font-size: 14px;
-      color: #2a5c40;
+      color: var(--status-comeback-fg);
       line-height: 1.5;
     }
 
@@ -823,7 +823,15 @@
   }
 
   // ── Word cloud rendering ──────────────────────────────────────
-  const WC_COLORS = ['#6a2a4e', '#3a6d52', '#7ab59a', '#4e1d3a', '#2e6040', '#8ec4a8', '#1e4d36'];
+  const WC_COLORS = [
+    '#6a2a4e',   // aubergine-500 — primary
+    '#a85a7a',   // aubergine-400 — mid
+    '#4e1d3a',   // aubergine-600 — deep
+    '#bf7c9d',   // aubergine-300 — rose
+    '#c88a6b',   // warm peach
+    '#9c7a8a',   // dusty mauve
+    '#3a1e30',   // aubergine-700 — near-black
+  ];
 
   let wcLayout = null; // track current layout to abort on re-render
 
