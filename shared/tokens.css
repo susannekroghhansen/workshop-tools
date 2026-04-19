@@ -33,13 +33,15 @@
   --radius-sm:  10px;
   --radius-pill: 999px;
 
-  /* Timer state colours — keep green/yellow/red semantics for now (phase C may revisit) */
-  --timer-green:    #5e9977;
-  --timer-green-bg: #eaf4ef;
-  --timer-yellow:   #b8860b;
-  --timer-yellow-bg:#fdf6d8;
-  --timer-red:      #c0392b;
-  --timer-red-bg:   #fdecea;
+  /* Timer state colours — semantic names; aubergine progression palette */
+  --timer-green:    #6a2a4e;   /* primary aubergine — calm state */
+  --timer-green-bg: #f5e3ec;   /* blush — calm state background */
+
+  --timer-yellow:   #bf7c9d;   /* mid-tone rose-mauve — warning state */
+  --timer-yellow-bg: #fae3ed;   /* slightly warmer blush — warning background */
+
+  --timer-red:      #d93d5f;   /* hot berry — urgent / out state */
+  --timer-red-bg:   #fae1e6;   /* warm berry tint — urgent background */
 
   /* Typography — unchanged */
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;

@@ -643,7 +643,7 @@
     const cls = timerColorClass(remaining, duration || selectedDuration);
     displayEl.className = 'timer-display' + (cls ? ' ' + cls : '');
     digitsEl.textContent = formatTime(remaining);
-    doneEl.textContent = remaining <= 0 ? "⏰ Time's up!" : '';
+    doneEl.textContent = remaining <= 0 ? "Time's up." : '';
     const pct = duration ? Math.max(0, Math.min(1, remaining / duration)) * 100 : 100;
     progressEl.style.width = pct + '%';
   }
@@ -680,7 +680,7 @@
     tvDigits.style.color = color;
     tvProgress.style.background = color;
     tvDigits.textContent = formatTime(remaining);
-    tvDone.textContent = remaining <= 0 ? "⏰ Time's up!" : '';
+    tvDone.textContent = remaining <= 0 ? "Time's up." : '';
     const pct = duration ? Math.max(0, Math.min(1, remaining / duration)) * 100 : 100;
     tvProgress.style.width = pct + '%';
     tvLabel.textContent = cachedState ? (cachedState.label || '') : '';
