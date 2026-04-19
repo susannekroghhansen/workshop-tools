@@ -4,28 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Temperature Check</title>
+  <link rel="stylesheet" href="../shared/tokens.css">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg:      #f4f7f6;
-      --card:    #ffffff;
-      --blue:    #5e9977;
-      --blue-dk: #4a7d61;
-      --green:   #5e9977;
-      --red-txt: #5a2020;
-      --text:    #2e3d38;
-      --muted:   #7a9990;
-      --border:  #cdd9d5;
-      --shadow:  0 2px 14px rgba(0,0,0,0.06);
-      --radius:  14px;
-    }
-
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100dvh;
       display: flex;
       flex-direction: column;
     }
@@ -126,7 +107,7 @@
       line-height: 1.5;
     }
 
-    textarea:focus { border-color: var(--blue); }
+    textarea:focus { border-color: var(--primary); }
 
     /* ── Buttons ── */
     .btn {
@@ -144,8 +125,8 @@
     }
 
     .btn:active { transform: scale(.98); }
-    .btn-blue  { background: var(--blue);  color: #fff; }
-    .btn-blue:hover { background: var(--blue-dk); }
+    .btn-blue  { background: var(--primary);  color: #fff; }
+    .btn-blue:hover { background: var(--primary-dk); }
     .btn-red   { background: #f5e8e8; color: var(--red-txt); border: 1.5px solid #e8d4d4; }
     .btn-red:hover { background: #efdcdc; }
     .btn:disabled { opacity: .38; cursor: default; pointer-events: none; }
@@ -164,7 +145,7 @@
       display: inline-block;
       width: 7px; height: 7px;
       border-radius: 50%;
-      background: var(--green);
+      background: var(--primary);
       margin-right: 6px;
       animation: pulse 2.2s ease-in-out infinite;
     }
@@ -195,8 +176,8 @@
       font-family: inherit;
     }
 
-    .score-btn:hover  { border-color: var(--blue); background: #e8f0ec; }
-    .score-btn.on     { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .score-btn:hover  { border-color: var(--primary); background: #e8f0ec; }
+    .score-btn.on     { background: var(--primary); border-color: var(--primary); color: #fff; }
 
     .scale-ends {
       display: flex;
@@ -232,7 +213,7 @@
     .avg-num {
       font-size: 64px;
       font-weight: 700;
-      color: var(--blue);
+      color: var(--primary);
       line-height: 1;
       letter-spacing: -.03em;
     }
@@ -341,7 +322,7 @@
       width: 16px;
       height: 16px;
       border: 2px solid var(--border);
-      border-top-color: var(--blue);
+      border-top-color: var(--primary);
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
       flex-shrink: 0;
@@ -375,7 +356,7 @@
       letter-spacing: .02em;
     }
 
-    .word-input:focus { border-color: var(--blue); }
+    .word-input:focus { border-color: var(--primary); }
 
     .btn-ghost {
       display: block;
@@ -436,7 +417,7 @@
     }
 
     .word-cloud span {
-      color: var(--blue-dk);
+      color: var(--primary-dk);
       font-weight: 600;
       transition: opacity .2s;
     }
@@ -449,7 +430,7 @@
 
     .check-circle {
       width: 58px; height: 58px;
-      background: var(--green);
+      background: var(--primary);
       color: #fff;
       border-radius: 50%;
       font-size: 26px;
@@ -488,7 +469,7 @@
       border-radius: 10px;
       padding: 10px 16px;
       font-size: 13px;
-      color: var(--blue-dk);
+      color: var(--primary-dk);
       text-align: center;
       font-weight: 500;
     }
@@ -523,9 +504,9 @@
     .nav-tab:hover { background: var(--bg); color: var(--text); }
 
     .nav-tab.active {
-      background: var(--blue);
+      background: var(--primary);
       color: #fff;
-      border-color: var(--blue);
+      border-color: var(--primary);
     }
 
     /* ── Word cloud projection view ── */
@@ -561,7 +542,7 @@
     .wc-avg-num {
       font-size: 26px;
       font-weight: 700;
-      color: var(--blue);
+      color: var(--primary);
       line-height: 1;
       letter-spacing: -.02em;
     }
