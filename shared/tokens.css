@@ -6,6 +6,7 @@
 :root {
   /* Surfaces */
   --bg:         #fbf4f4;   /* warm pink off-white (was #f4f7f6 sage) */
+  --bg-alt:     #eae9ed;   /* cool pale grey — input and subtle field background */
   --card:       #ffffff;
 
   /* Primary — aubergine */
