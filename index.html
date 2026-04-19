@@ -73,10 +73,16 @@
     }
 
     .tool-icon {
-      font-size: 2rem;
-      flex-shrink: 0;
       width: 2.5rem;
-      text-align: center;
+      flex-shrink: 0;
+      color: var(--primary);
+      display: grid;
+      place-items: center;
+    }
+
+    .tool-icon svg {
+      width: 32px;
+      height: 32px;
     }
 
     .tool-text {
@@ -112,7 +118,11 @@
 
     <div class="tool-grid">
       <a class="tool-card" href="./energy-checkin/index.html?facilitator=1234">
-        <div class="tool-icon">⚡</div>
+        <div class="tool-icon">
+          <svg viewBox="0 0 48 48" width="32" height="32" aria-hidden="true">
+            <use href="./shared/icons.svg#icon-energy"></use>
+          </svg>
+        </div>
         <div class="tool-text">
           <div class="tool-name">Energy Check-In</div>
           <div class="tool-desc">How's everyone feeling? Let's find out before we dive in.</div>
@@ -121,7 +131,11 @@
       </a>
 
       <a class="tool-card" href="./temperature-check/index.html?facilitator=1234">
-        <div class="tool-icon">🌡️</div>
+        <div class="tool-icon">
+          <svg viewBox="0 0 48 48" width="32" height="32" aria-hidden="true">
+            <use href="./shared/icons.svg#icon-temperature"></use>
+          </svg>
+        </div>
         <div class="tool-text">
           <div class="tool-name">Temperature Check</div>
           <div class="tool-desc">Take the room's pulse — are we warm, cool, or somewhere in between?</div>
@@ -130,7 +144,11 @@
       </a>
 
       <a class="tool-card" href="./parkinglot/index.html?facilitator=1234">
-        <div class="tool-icon">🅿️</div>
+        <div class="tool-icon">
+          <svg viewBox="0 0 48 48" width="32" height="32" aria-hidden="true">
+            <use href="./shared/icons.svg#icon-parking"></use>
+          </svg>
+        </div>
         <div class="tool-text">
           <div class="tool-name">Parking Lot</div>
           <div class="tool-desc">Good idea, wrong moment — park it here and circle back later.</div>
@@ -139,7 +157,11 @@
       </a>
 
       <a class="tool-card" href="./wordcloud/?facilitator=1234">
-        <div class="tool-icon">☁️</div>
+        <div class="tool-icon">
+          <svg viewBox="0 0 48 48" width="32" height="32" aria-hidden="true">
+            <use href="./shared/icons.svg#icon-wordcloud"></use>
+          </svg>
+        </div>
         <div class="tool-text">
           <div class="tool-name">Word Cloud</div>
           <div class="tool-desc">Ask a question, collect words live — watch the crowd's ideas take shape.</div>
@@ -148,7 +170,11 @@
       </a>
 
       <a class="tool-card" href="./timer/index.html?facilitator=1234">
-        <div class="tool-icon">⏱️</div>
+        <div class="tool-icon">
+          <svg viewBox="0 0 48 48" width="32" height="32" aria-hidden="true">
+            <use href="./shared/icons.svg#icon-timer"></use>
+          </svg>
+        </div>
         <div class="tool-text">
           <div class="tool-name">Timer</div>
           <div class="tool-desc">Set a countdown, share it live — everyone sees the clock ticking.</div>
@@ -157,7 +183,11 @@
       </a>
 
       <a class="tool-card" href="./synthesis-accelerator/index.html">
-        <div class="tool-icon">🔍</div>
+        <div class="tool-icon">
+          <svg viewBox="0 0 48 48" width="32" height="32" aria-hidden="true">
+            <use href="./shared/icons.svg#icon-synthesis"></use>
+          </svg>
+        </div>
         <div class="tool-text">
           <div class="tool-name">Synthesis Accelerator</div>
           <div class="tool-desc">Paste sticky notes, get themes — AI clusters your ideas in seconds.</div>
