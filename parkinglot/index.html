@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Parking Lot</title>
   <link rel="stylesheet" href="../shared/tokens.css">
+  <script src="../shared/join-url.js"></script>
   <style>
     body {
       display: flex;
@@ -560,8 +561,6 @@
     history.replaceState({}, '', newUrl);
   }
 
-  const PL_BASE_URL = 'https://susannekroghhansen.github.io/workshop-tools/parkinglot/';
-
   function sessionRef() {
     return db.collection('pl_sessions').doc(sessionId);
   }
@@ -757,7 +756,7 @@
   // ── QR code ─────────────────────────────────────────────────
   function showFacilitatorQR() {
     if (!sessionId) return;
-    const participantUrl = `${PL_BASE_URL}?session=${sessionId}`;
+    const participantUrl = buildJoinUrl();
     document.getElementById('f-qr-img').src =
       `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(participantUrl)}&color=3a1e30&bgcolor=ffffff&margin=2`;
     document.getElementById('f-qr-url').textContent = participantUrl;

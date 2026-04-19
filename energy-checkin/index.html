@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Energy Check-In</title>
   <link rel="stylesheet" href="../shared/tokens.css">
+  <script src="../shared/join-url.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     /* ── Facilitator badge ── */
@@ -127,11 +128,11 @@
       opacity: 0.82;
     }
 
-    .e5 { background: #c8e6d4; color: #1a4d30; }
-    .e4 { background: #d6eee0; color: #2a5c40; }
-    .e3 { background: #d6eaf0; color: #1e4a5a; }
-    .e2 { background: #d0e4ef; color: #1a3d55; }
-    .e1 { background: #e8d6d6; color: #5a2020; }
+    .e5 { background: var(--energy-5-bg); color: var(--energy-5-fg); }
+    .e4 { background: var(--energy-4-bg); color: var(--energy-4-fg); }
+    .e3 { background: var(--energy-3-bg); color: var(--energy-3-fg); }
+    .e2 { background: var(--energy-2-bg); color: var(--energy-2-fg); }
+    .e1 { background: var(--energy-1-bg); color: var(--energy-1-fg); }
 
     /* ── Thank-you flash (facilitator only) ── */
     .thankyou {
@@ -150,12 +151,12 @@
       width: 64px;
       height: 64px;
       border-radius: 50%;
-      background: #c8e6d4;
+      background: var(--energy-5-bg);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 1.8rem;
-      color: #1a4d30;
+      color: var(--energy-5-fg);
       margin-bottom: 0.25rem;
     }
 
@@ -197,7 +198,7 @@
 
     .qr-code-wrap {
       background: white;
-      border: 1px solid #e4eeea;
+      border: 1px solid var(--border);
       border-radius: 14px;
       padding: 14px;
       display: inline-block;
@@ -301,8 +302,14 @@
       font-weight: 600;
       min-width: 1.1rem;
       text-align: center;
-      color: #5a6e68;
     }
+
+    /* Rows render 5 → 1 (first child = level 5) */
+    .bar-row:nth-child(1) .bar-num { color: var(--energy-5-fg); }
+    .bar-row:nth-child(2) .bar-num { color: var(--energy-4-fg); }
+    .bar-row:nth-child(3) .bar-num { color: var(--energy-3-fg); }
+    .bar-row:nth-child(4) .bar-num { color: var(--energy-2-fg); }
+    .bar-row:nth-child(5) .bar-num { color: var(--energy-1-fg); }
 
     .bar-track {
       flex: 1;
@@ -318,11 +325,11 @@
       transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .bf5 { background: #8ec8a8; }
-    .bf4 { background: #9ecfb8; }
-    .bf3 { background: #8ab8cc; }
-    .bf2 { background: #7aaac0; }
-    .bf1 { background: #c09898; }
+    .bf5 { background: var(--energy-5); }
+    .bf4 { background: var(--energy-4); }
+    .bf3 { background: var(--energy-3); }
+    .bf2 { background: var(--energy-2); }
+    .bf1 { background: var(--energy-1); }
 
     .bar-count {
       font-size: 0.85rem;
@@ -429,16 +436,16 @@
       flex-shrink: 0;
     }
 
-    .cb5 { background: #c8e6d4; color: #1a4d30; }
-    .cb5 .badge-dot { background: #1a4d30; }
-    .cb4 { background: #d6eee0; color: #2a5c40; }
-    .cb4 .badge-dot { background: #2a5c40; }
-    .cb3 { background: #d6eaf0; color: #1e4a5a; }
-    .cb3 .badge-dot { background: #1e4a5a; }
-    .cb2 { background: #d0e4ef; color: #1a3d55; }
-    .cb2 .badge-dot { background: #1a3d55; }
-    .cb1 { background: #e8d6d6; color: #5a2020; }
-    .cb1 .badge-dot { background: #5a2020; }
+    .cb5 { background: var(--energy-5-bg); color: var(--energy-5-fg); }
+    .cb5 .badge-dot { background: var(--energy-5-dot); }
+    .cb4 { background: var(--energy-4-bg); color: var(--energy-4-fg); }
+    .cb4 .badge-dot { background: var(--energy-4-dot); }
+    .cb3 { background: var(--energy-3-bg); color: var(--energy-3-fg); }
+    .cb3 .badge-dot { background: var(--energy-3-dot); }
+    .cb2 { background: var(--energy-2-bg); color: var(--energy-2-fg); }
+    .cb2 .badge-dot { background: var(--energy-2-dot); }
+    .cb1 { background: var(--energy-1-bg); color: var(--energy-1-fg); }
+    .cb1 .badge-dot { background: var(--energy-1-dot); }
 
     .p-bar-row.mine .bar-track {
       box-shadow: 0 0 0 2px var(--primary);
@@ -617,7 +624,6 @@
 
   const params = new URLSearchParams(window.location.search);
   const isFacilitator = params.get('facilitator') === '1234';
-  const participantUrl = window.location.origin + window.location.pathname;
 
   const RATING_LABELS = {
     5: 'You checked in at 5 — buzzing',
@@ -766,6 +772,7 @@
 
   // ── QR code ──
   function generateQR() {
+    const participantUrl = buildJoinUrl();
     document.getElementById('qr-url-label').textContent = participantUrl;
     new QRCode(document.getElementById('qr-container'), {
       text: participantUrl,

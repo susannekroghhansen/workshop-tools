@@ -43,6 +43,37 @@
   --timer-red:      #d93d5f;   /* hot berry — urgent / out state */
   --timer-red-bg:   #fae1e6;   /* warm berry tint — urgent background */
 
+  /* ─── 1-5 scale — diverging palette in aubergine family ─── */
+  /* Used by tools with valenced 1-5 scales (energy-checkin,
+     temperature-check). Maintains semantic reading: 5 = positive,
+     1 = attention-needed. Each level has a surface (--bg), a
+     foreground text (--fg), and a dot/accent (--dot) variant. */
+
+  --energy-5:      #c88a6b;   /* warm peach-terracotta */
+  --energy-5-bg:   #fae3d6;
+  --energy-5-fg:   #5e2e14;
+  --energy-5-dot:  #5e2e14;
+
+  --energy-4:      #d9a4b8;   /* light blush-rose */
+  --energy-4-bg:   #fae1ec;
+  --energy-4-fg:   #4e1d3a;
+  --energy-4-dot:  #4e1d3a;
+
+  --energy-3:      #a85a7a;   /* brand mid-aubergine — neutral */
+  --energy-3-bg:   #f1d9e3;
+  --energy-3-fg:   #3a1e30;
+  --energy-3-dot:  #3a1e30;
+
+  --energy-2:      #8a6480;   /* dusty muted mauve */
+  --energy-2-bg:   #e6d4dc;
+  --energy-2-fg:   #3a2030;
+  --energy-2-dot:  #3a2030;
+
+  --energy-1:      #b85866;   /* warm berry */
+  --energy-1-bg:   #f5d9dd;
+  --energy-1-fg:   #5a1f28;
+  --energy-1-dot:  #5a1f28;
+
   /* Typography — unchanged */
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'Menlo', 'Consolas', monospace;
