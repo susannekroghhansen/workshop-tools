@@ -352,9 +352,9 @@
 
     .moves-error {
       font-size: 13px;
-      color: #7a3a3a;
-      background: #fce8e8;
-      border: 1px solid #f0c4c4;
+      color: var(--red-txt);
+      background: var(--red-bg);
+      border: 1px solid var(--red-border);
       border-radius: 8px;
       padding: 10px 12px;
       line-height: 1.5;
@@ -423,7 +423,7 @@
       transition: background .15s, color .15s, border-color .15s;
     }
 
-    .btn-retry:hover { background: var(--bg); color: var(--text); border-color: #b0b8b4; }
+    .btn-retry:hover { background: var(--bg); color: var(--text); border-color: var(--muted-soft); }
 
     /* ── Word cloud ── */
     .word-cloud {
@@ -666,7 +666,16 @@
   let picked       = null;
   let pendingScore = null;
 
-  const BAR_COLORS = ['#c09898', '#7aaac0', '#8ab8cc', '#9ecfb8', '#8ec8a8'];
+  const BAR_COLORS = (() => {
+    const styles = getComputedStyle(document.documentElement);
+    return [
+      styles.getPropertyValue('--energy-1').trim(),
+      styles.getPropertyValue('--energy-2').trim(),
+      styles.getPropertyValue('--energy-3').trim(),
+      styles.getPropertyValue('--energy-4').trim(),
+      styles.getPropertyValue('--energy-5').trim(),
+    ];
+  })();
   let movesLastKey   = null;
   let movesPrevNames = [];
 
