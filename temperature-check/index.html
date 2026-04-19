@@ -40,6 +40,12 @@
     .header {
       text-align: center;
       margin-bottom: 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 8;
+      background: var(--bg);
+      padding: 0.35rem 0 0.75rem;
+      margin-top: -0.15rem;
     }
 
     .header h1 {
@@ -53,6 +59,19 @@
       font-size: 0.9rem;
       color: var(--muted);
       line-height: 1.5;
+    }
+
+    .tool-logo {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+      color: var(--primary);
+    }
+
+    .tool-logo svg {
+      display: block;
+      width: 32px;
+      height: 32px;
     }
 
     /* ── Views ── */
@@ -531,6 +550,13 @@
       flex-shrink: 0;
       border-bottom: 1px solid var(--border);
       background: var(--card);
+      position: sticky;
+      top: 0;
+      z-index: 6;
+    }
+
+    .wc-avg-strip .tool-logo {
+      margin-bottom: 0.35rem;
     }
 
     .wc-avg-row {
@@ -597,6 +623,8 @@
   };
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
+
+  const TC_HEADER_LOGO = '<div class="tool-logo" aria-hidden="true"><svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-temperature"></use></svg></div>';
 
   // ── URL-based mode detection ────────────────────────────────
   const params = new URLSearchParams(location.search);
@@ -692,7 +720,7 @@
   function renderNoSession() {
     document.getElementById('app').innerHTML = `
       <div class="view on">
-        <div class="header"><h1>Temperature Check</h1></div>
+        <div class="header">${TC_HEADER_LOGO}<h1>Temperature Check</h1></div>
         <div class="card">
           <div class="empty">
             <div class="empty-icon">🔗</div>
@@ -712,6 +740,7 @@
       app.innerHTML = `
         <div class="view on">
           <div class="header">
+            ${TC_HEADER_LOGO}
             <h1>Temperature Check</h1>
           </div>
           <div class="card">
@@ -735,6 +764,7 @@
       app.innerHTML = `
         <div class="view on">
           <div class="header">
+            ${TC_HEADER_LOGO}
             <h1>One word</h1>
             <p>Optional — what's the main reason you scored that way?</p>
           </div>
@@ -756,6 +786,7 @@
     app.innerHTML = `
       <div class="view on">
         <div class="header">
+          ${TC_HEADER_LOGO}
           <h1>Temperature Check</h1>
         </div>
         <div class="card">
@@ -820,7 +851,7 @@
     if (!s.on || !s.q) {
       app.innerHTML = `
         <div class="view on">
-          <div class="header"><h1>Temperature Check</h1></div>
+          <div class="header">${TC_HEADER_LOGO}<h1>Temperature Check</h1></div>
           <div class="card">
             <div class="empty">
               <div class="empty-icon">📊</div>
@@ -852,6 +883,7 @@
     app.innerHTML = `
       <div class="view on">
         <div class="header">
+          ${TC_HEADER_LOGO}
           <h1>Results</h1>
         </div>
         <div class="card">
@@ -906,6 +938,7 @@
       app.innerHTML = `
         <div class="view on">
           ${banner}
+          <div class="header">${TC_HEADER_LOGO}<h1>Temperature Check</h1></div>
           <div class="card">
             <div class="empty">
               <div class="empty-icon">⏳</div>
@@ -919,6 +952,7 @@
     app.innerHTML = `
       <div class="view on">
         ${banner}
+        <div class="header">${TC_HEADER_LOGO}<h1>Temperature Check</h1></div>
         <div class="card">
           <span class="field-label">Question</span>
           <p class="q-text">${escapeHtml(s.q)}</p>
@@ -952,6 +986,7 @@
     app.innerHTML = `
       <div class="wc-projection">
         <div class="wc-avg-strip">
+          ${TC_HEADER_LOGO}
           <div class="wc-avg-row">
             <span class="wc-avg-num">${avg !== null ? avg.toFixed(1) : '—'}</span>
             <span class="wc-avg-label">average</span>
@@ -1018,6 +1053,7 @@
           ← Back to toolkit
         </a>
         <div class="header">
+          ${TC_HEADER_LOGO}
           <h1>Ask the room</h1>
           <p>Activate a question for participants to respond.</p>
         </div>

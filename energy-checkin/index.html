@@ -47,6 +47,12 @@
     /* ── Header ── */
     .header {
       text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 8;
+      background: var(--bg);
+      padding: 0.35rem 0 0.75rem;
+      margin-top: -0.15rem;
     }
 
     .header h1 {
@@ -59,6 +65,19 @@
       margin-top: 0.35rem;
       font-size: 0.9rem;
       color: #7a9990;
+    }
+
+    .tool-logo {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+      color: var(--primary);
+    }
+
+    .tool-logo svg {
+      display: block;
+      width: 32px;
+      height: 32px;
     }
 
     /* ── Shared card ── */
@@ -442,6 +461,9 @@
     <!-- Input -->
     <div id="participant-input">
       <div class="header">
+        <div class="tool-logo" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-energy"></use></svg>
+        </div>
         <h1>How's your energy?</h1>
         <p>Tap a number to check in</p>
       </div>
@@ -472,6 +494,9 @@
       <div id="p-contribution-badge" class="contribution-badge"></div>
 
       <div class="header">
+        <div class="tool-logo" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-energy"></use></svg>
+        </div>
         <h1>Here's where the group is</h1>
         <p id="p-total-label">Loading…</p>
       </div>
@@ -499,6 +524,9 @@
   <div class="panel">
     <div class="preview-banner">Preview mode — this is what participants see</div>
     <div class="header">
+      <div class="tool-logo" aria-hidden="true">
+        <svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-energy"></use></svg>
+      </div>
       <h1>How's your energy?</h1>
       <p>Tap a number to check in</p>
     </div>
@@ -532,6 +560,9 @@
     <!-- Facilitator's own input -->
     <div>
       <div class="header" style="margin-bottom:1.25rem;">
+        <div class="tool-logo" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-energy"></use></svg>
+        </div>
         <h1>How's your energy?</h1>
         <p>Your check-in</p>
       </div>

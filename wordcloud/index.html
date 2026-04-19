@@ -62,9 +62,31 @@
     }
 
     /* ── Header ── */
-    .header { text-align: center; margin-bottom: 1.5rem; }
+    .header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 8;
+      background: var(--bg);
+      padding: 0.35rem 0 0.75rem;
+      margin-top: -0.15rem;
+    }
     .header h1 { font-size: 1.55rem; font-weight: 600; letter-spacing: -0.02em; }
     .header p  { margin-top: 0.35rem; font-size: 0.9rem; color: var(--muted); line-height: 1.5; }
+
+    .tool-logo {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+      color: var(--primary);
+    }
+
+    .tool-logo svg {
+      display: block;
+      width: 32px;
+      height: 32px;
+    }
 
     /* ── Field label ── */
     .field-label {
@@ -311,6 +333,13 @@
       border-bottom: 1px solid var(--border);
       background: var(--card);
       flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      z-index: 6;
+    }
+
+    .wc-question-strip .tool-logo {
+      margin-bottom: 0.4rem;
     }
 
     .wc-subtitle {
@@ -382,6 +411,9 @@
     <a href="../index.html" style="display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--muted);text-decoration:none;margin-bottom:4px;">← Back to toolkit</a>
 
     <div class="header">
+      <div class="tool-logo" aria-hidden="true">
+        <svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-wordcloud"></use></svg>
+      </div>
       <h1>Word Cloud</h1>
       <p id="p-header-sub">Share a word that comes to mind.</p>
     </div>
@@ -437,6 +469,9 @@
       <a href="../index.html" style="display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--muted);text-decoration:none;margin-bottom:4px;">← Back to toolkit</a>
 
       <div class="header">
+        <div class="tool-logo" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-wordcloud"></use></svg>
+        </div>
         <h1>Word Cloud</h1>
         <p>Share the QR code, then set a question to start collecting words.</p>
       </div>
@@ -472,6 +507,9 @@
     <div class="fac-tab" id="ft-preview">
       <div class="preview-banner">Preview — this is what participants see</div>
       <div class="header">
+        <div class="tool-logo" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-wordcloud"></use></svg>
+        </div>
         <h1>Word Cloud</h1>
         <p id="prev-header-sub">Share a word that comes to mind.</p>
       </div>
@@ -498,6 +536,9 @@
     <!-- Tab 3: Word cloud view -->
     <div class="fac-tab" id="ft-wordcloud">
       <div class="wc-question-strip">
+        <div class="tool-logo" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-wordcloud"></use></svg>
+        </div>
         <p class="wc-subtitle" id="wc-subtitle">No active question</p>
         <p id="wc-debug-counter" style="font-size:11px;color:var(--muted);margin-top:4px;font-family:monospace;">0 words received (0 snapshots)</p>
       </div>
@@ -515,7 +556,12 @@
   <!-- ── NO SESSION VIEW ── -->
   <div class="view" id="v-nosession">
     <a href="../index.html" style="display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--muted);text-decoration:none;margin-bottom:4px;">← Back to toolkit</a>
-    <div class="header"><h1>Word Cloud</h1></div>
+    <div class="header">
+      <div class="tool-logo" aria-hidden="true">
+        <svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-wordcloud"></use></svg>
+      </div>
+      <h1>Word Cloud</h1>
+    </div>
     <div class="card">
       <div class="empty">
         <div class="empty-icon" style="font-size:32px">🔗</div>

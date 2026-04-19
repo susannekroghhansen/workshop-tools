@@ -10,7 +10,47 @@
     .view { display: none; }
     .view.active { display: flex; flex-direction: column; align-items: center; padding: 2rem 1.25rem 5rem; min-height: 100dvh; }
 
-    .logo { font-size: 2rem; margin-bottom: 0.25rem; }
+    .logo {
+      margin-bottom: 0.25rem;
+      color: var(--primary);
+      display: flex;
+      justify-content: center;
+    }
+    .logo svg {
+      width: 32px;
+      height: 32px;
+      display: block;
+    }
+
+    .timer-brand {
+      position: sticky;
+      top: 0;
+      z-index: 8;
+      background: var(--bg);
+      padding: 0.35rem 0 0.75rem;
+      margin: -0.25rem 0 0.25rem;
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .tv-brand {
+      position: absolute;
+      top: 1.25rem;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--primary);
+      z-index: 1;
+    }
+
+    .tv-brand svg {
+      width: 28px;
+      height: 28px;
+      display: block;
+    }
+
     h1 { font-size: 1.55rem; font-weight: 600; letter-spacing: -0.02em; color: var(--text); margin-bottom: 0.35rem; }
     .subtitle { font-size: 0.9rem; color: var(--muted); margin-bottom: 1.5rem; }
 
@@ -275,6 +315,7 @@
       background: var(--bg);
       z-index: 50;
       padding: 2rem;
+      padding-top: 3.5rem;
     }
     .tv-digits {
       font-size: clamp(5rem, 22vw, 14rem);
@@ -391,9 +432,13 @@
 
 <!-- PARTICIPANT VIEW -->
 <div id="view-participant" class="view">
-  <div class="logo">⏱️</div>
-  <h1>Timer</h1>
-  <p class="subtitle" id="p-subtitle">Waiting for facilitator…</p>
+  <div class="timer-brand">
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-timer"></use></svg>
+    </div>
+    <h1>Timer</h1>
+    <p class="subtitle" id="p-subtitle">Waiting for facilitator…</p>
+  </div>
 
   <div id="p-waiting" class="waiting-msg">
     <div class="big">⏳</div>
@@ -420,9 +465,13 @@
   <!-- TAB: Facilitator view -->
   <div id="fac-facilitator" class="fac-tab on">
     <a href="../index.html" style="display:inline-flex; align-items:center; gap:5px; font-size:13px; color:#7a9990; text-decoration:none; margin-bottom:4px; width:100%; max-width:500px;">← Back to toolkit</a>
-    <div class="logo">⏱️</div>
-    <h1>Timer</h1>
-    <p class="subtitle">Set a countdown for your workshop</p>
+    <div class="timer-brand">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-timer"></use></svg>
+      </div>
+      <h1>Timer</h1>
+      <p class="subtitle">Set a countdown for your workshop</p>
+    </div>
 
     <div class="card">
       <div class="card-title">Label (optional)</div>
@@ -473,9 +522,13 @@
   <!-- TAB: Participant preview -->
   <div id="fac-preview" class="fac-tab">
     <div class="preview-banner">Preview mode — this is what participants see</div>
-    <div class="logo">⏱️</div>
-    <h1>Timer</h1>
-    <p class="subtitle" id="prev-subtitle">Waiting for facilitator…</p>
+    <div class="timer-brand">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-timer"></use></svg>
+      </div>
+      <h1>Timer</h1>
+      <p class="subtitle" id="prev-subtitle">Waiting for facilitator…</p>
+    </div>
 
     <div id="prev-waiting" class="waiting-msg">
       <div class="big">⏳</div>
@@ -498,6 +551,9 @@
 
   <!-- TAB: Timer view (full screen) -->
   <div id="fac-timer" class="fac-tab">
+    <div class="tv-brand" aria-hidden="true">
+      <svg viewBox="0 0 48 48" width="28" height="28"><use href="../shared/icons.svg#icon-timer"></use></svg>
+    </div>
     <div class="tv-label" id="tv-label"></div>
     <div class="tv-digits" id="tv-digits">5:00</div>
     <div class="tv-done-msg" id="tv-done"></div>
@@ -510,8 +566,12 @@
 
 <!-- NO SESSION VIEW -->
 <div id="view-nosession" class="view">
-  <div class="logo">⏱️</div>
-  <h1>Timer</h1>
+  <div class="timer-brand">
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-timer"></use></svg>
+    </div>
+    <h1>Timer</h1>
+  </div>
   <div class="no-session">
     <div class="big">🔗</div>
     <p>Ask your facilitator for the participant link.</p>

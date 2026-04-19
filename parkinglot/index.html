@@ -15,6 +15,12 @@
     .header {
       text-align: center;
       margin-bottom: 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 8;
+      background: var(--bg);
+      padding: 0.35rem 0 0.75rem;
+      margin-top: -0.15rem;
     }
 
     .header h1 {
@@ -28,6 +34,19 @@
       font-size: 0.9rem;
       color: var(--muted);
       line-height: 1.5;
+    }
+
+    .tool-logo {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+      color: var(--primary);
+    }
+
+    .tool-logo svg {
+      display: block;
+      width: 32px;
+      height: 32px;
     }
 
     /* ── Views ── */
@@ -386,6 +405,9 @@
     <a href="../index.html" style="display:inline-flex; align-items:center; gap:5px; font-size:13px; color:var(--muted); text-decoration:none; margin-bottom:4px;">← Back to toolkit</a>
 
     <div class="header">
+      <div class="tool-logo" aria-hidden="true">
+        <svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-parking"></use></svg>
+      </div>
       <h1>Parking Lot</h1>
       <p>Don't lose that thought — park it here.<br>The facilitator will make sure it gets addressed.</p>
     </div>
@@ -421,6 +443,9 @@
     <div class="fac-tab on" id="ft-fv">
       <a href="../index.html" style="display:inline-flex; align-items:center; gap:5px; font-size:13px; color:var(--muted); text-decoration:none; margin-bottom:4px;">← Back to toolkit</a>
       <div class="header">
+        <div class="tool-logo" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-parking"></use></svg>
+        </div>
         <h1>Parking Lot</h1>
         <p>Share the QR code so participants can park their questions.</p>
       </div>
@@ -441,6 +466,9 @@
     <div class="fac-tab" id="ft-preview">
       <div class="preview-banner">Preview mode — this is what participants see</div>
       <div class="header">
+        <div class="tool-logo" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-parking"></use></svg>
+        </div>
         <h1>Parking Lot</h1>
         <p>Don't lose that thought — park it here.<br>The facilitator will make sure it gets addressed.</p>
       </div>
@@ -454,6 +482,9 @@
     <!-- Tab 3: All submissions -->
     <div class="fac-tab" id="ft-all">
       <div class="header">
+        <div class="tool-logo" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-parking"></use></svg>
+        </div>
         <h1>Parking Lot</h1>
         <p id="fac-summary-text">Submissions will appear here in real time</p>
       </div>
@@ -489,6 +520,9 @@
   <div class="view" id="v-nosession">
     <a href="../index.html" style="display:inline-flex; align-items:center; gap:5px; font-size:13px; color:var(--muted); text-decoration:none; margin-bottom:4px;">← Back to toolkit</a>
     <div class="header">
+      <div class="tool-logo" aria-hidden="true">
+        <svg viewBox="0 0 48 48" width="32" height="32"><use href="../shared/icons.svg#icon-parking"></use></svg>
+      </div>
       <h1>Parking Lot</h1>
     </div>
     <div class="card">
