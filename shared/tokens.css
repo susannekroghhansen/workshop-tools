@@ -74,6 +74,24 @@
   --energy-1-fg:   #5a1f28;
   --energy-1-dot:  #5a1f28;
 
+  /* ─── Status states — categorical (parking lot) ─── */
+  /* Used for three-state status systems where colour encodes
+     category, not order. Distinct from --energy-* (ordinal). */
+
+  --status-comeback:      #bf7c9d;   /* aubergine-300 — warm accent */
+  --status-comeback-bg:   #f5e3ec;   /* blush background */
+  --status-comeback-soft: #fae1ec;   /* lighter for hover/chips */
+  --status-comeback-fg:   #4e1d3a;   /* deep aubergine text */
+
+  --status-covered:       #9c7a8a;   /* dusty mauve — cool, resolved */
+  --status-covered-bg:    #ede2e7;   /* muted wash */
+  --status-covered-soft:  #f1e6eb;   /* lighter for hover */
+  --status-covered-fg:    #3a1e30;   /* deep aubergine text */
+
+  /* ─── Warning / caution ─── */
+  --warn:      #b85c2a;   /* warm amber, used sparingly */
+  --warn-bg:   #fae8d6;
+
   /* Typography — unchanged */
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'Menlo', 'Consolas', monospace;

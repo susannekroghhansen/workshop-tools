@@ -114,7 +114,7 @@
       margin-top: 5px;
     }
 
-    .char-count.warn { color: #b85c2a; }
+    .char-count.warn { color: var(--warn); }
 
     /* ── Buttons ── */
     .btn {
@@ -272,19 +272,19 @@
     .action-btn:active { transform: scale(.97); }
 
     .action-btn.comeback {
-      border-color: #c8e6d4;
-      background: #edf8f2;
-      color: #2a5c40;
+      border-color: var(--status-comeback-soft);
+      background: var(--status-comeback-bg);
+      color: var(--status-comeback-fg);
     }
 
     .action-btn.comeback:hover {
-      background: #c8e6d4;
+      background: var(--status-comeback-soft);
     }
 
     .action-btn.comeback.active {
-      background: #c8e6d4;
-      border-color: #8ec8a8;
-      color: #1a4d30;
+      background: var(--status-comeback-soft);
+      border-color: var(--status-comeback);
+      color: var(--status-comeback-fg);
     }
 
     .action-btn.covered-btn {
@@ -299,9 +299,9 @@
     }
 
     .action-btn.covered-btn.active {
-      background: #d6eaf0;
-      border-color: #8ab8cc;
-      color: #1e4a5a;
+      background: var(--status-covered-bg);
+      border-color: var(--status-covered);
+      color: var(--status-covered-fg);
     }
 
     /* ── Facilitator badge ── */
@@ -389,8 +389,14 @@
     }
 
     .chip-open    { background: var(--primary-lt); color: var(--text); }
-    .chip-comeback { background: #edf8f2; color: #2a5c40; }
-    .chip-covered  { background: #d6eaf0; color: #1e4a5a; }
+    .chip-comeback {
+      background: var(--status-comeback-bg);
+      color: var(--status-comeback-fg);
+    }
+    .chip-covered {
+      background: var(--status-covered-bg);
+      color: var(--status-covered-fg);
+    }
   </style>
   <!-- Firebase SDK (Firestore for real-time cross-device sync) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
