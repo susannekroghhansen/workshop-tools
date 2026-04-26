@@ -22,7 +22,7 @@ const energyLimiter = rateLimit({
   message: { error: 'Too many requests.' },
 });
 
-app.use(cors({ origin: 'https://susannekroghhansen.github.io' }));
+app.use(cors({ origin: ['https://tools.unruledplay.dk', 'https://susannekroghhansen.github.io'] }));
 app.use(express.json());
 app.use('/api/claude', limiter);
 
