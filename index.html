@@ -7,8 +7,61 @@
   <link rel="stylesheet" href="./shared/tokens.css">
   <style>
     body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background-color: var(--bg);
+      background-image: radial-gradient(rgba(106, 42, 78, 0.10) 1px, transparent 1.5px);
+      background-size: 20px 20px;
+      background-attachment: fixed;
+      color: var(--text);
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
+    }
+
+    .top-nav {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem 0.25rem;
+      display: flex;
+      align-items: center;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .brand-mark {
+      display: inline-flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 2px 0;
+    }
+    .brand-mark span {
+      display: block;
+      height: 3px;
+      border-radius: 1.5px;
+      background: var(--text);
+    }
+    .brand-mark span:nth-child(1) { width: 20px; }
+    .brand-mark span:nth-child(2) { width: 14px; opacity: 0.6; }
+    .brand-mark span:nth-child(3) { width: 24px; opacity: 0.85; }
+    .brand-type {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      line-height: 1;
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .brand-dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: inline-block;
     }
 
     main {
@@ -107,13 +160,44 @@
       font-size: 1.1rem;
       flex-shrink: 0;
     }
+
+    .launcher-footer {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 3rem;
+      text-align: center;
+    }
+    .launcher-footer p {
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--muted);
+      margin: 0 0 8px;
+    }
+    .launcher-footer a {
+      font-size: 13px;
+      color: var(--primary);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.15s ease;
+    }
+    .launcher-footer a:hover {
+      border-bottom-color: var(--primary);
+    }
   </style>
 </head>
 <body>
+  <header class="top-nav">
+    <a class="brand" href="./">
+      <span class="brand-mark" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </span>
+      <span class="brand-type">unruled<span class="brand-dot"></span>play</span>
+    </a>
+  </header>
   <main>
     <div class="header">
-      <h1>Workshop Tools</h1>
-      <p>Pick a tool to get started</p>
+      <h1>Unruled Play · Workshop Tools</h1>
+      <p>Six small browser tools for the moments a session needs something more than a slide.</p>
     </div>
 
     <div class="tool-grid">
@@ -196,5 +280,9 @@
       </a>
     </div>
   </main>
+  <footer class="launcher-footer">
+    <p>Made as part of Unruled Play — a practice for problem solving, product strategy, and serious play in large enterprises.</p>
+    <a href="https://unruledplay.dk" target="_blank" rel="noopener">unruledplay.net ↗</a>
+  </footer>
 </body>
 </html>
