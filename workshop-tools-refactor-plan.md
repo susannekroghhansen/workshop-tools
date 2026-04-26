@@ -1,6 +1,6 @@
 # Workshop Tools — refactor plan
 
-**Context:** This repo currently has seven HTML files (the launcher `index.html` plus six tool folders), each with its own `<style>` block and duplicated design tokens. The tokens (sage-green palette, 14px radius, system-ui font, soft shadow) are identical across all files but stored six-plus times. The tools are also about to be re-hosted at `tools.unruledplay.net` and need to match the refreshed Unruled Play brand — aubergine and blush instead of sage green, origami SVG icons instead of OS emoji.
+**Context:** This repo currently has seven HTML files (the launcher `index.html` plus six tool folders), each with its own `<style>` block and duplicated design tokens. The tokens (sage-green palette, 14px radius, system-ui font, soft shadow) are identical across all files but stored six-plus times. The tools are also about to be re-hosted at `tools.unruledplay.dk` and need to match the refreshed Unruled Play brand — aubergine and blush instead of sage green, origami SVG icons instead of OS emoji.
 
 **This refactor is in two phases:**
 
@@ -90,7 +90,7 @@ Nothing else goes in this file yet. Component styles stay inside each tool's own
 
 ### A2. Create `/shared/icons.svg`
 
-An SVG sprite file at `shared/icons.svg`, containing the six origami tool icons as `<symbol>` definitions. Paths are provided below — these exactly match the ones used on the unruledplay.net homepage.
+An SVG sprite file at `shared/icons.svg`, containing the six origami tool icons as `<symbol>` definitions. Paths are provided below — these exactly match the ones used on the unruledplay.dk homepage.
 
 ```svg
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
@@ -351,6 +351,6 @@ This is deliberate restraint. The point of phase A+B is to establish a clean, co
 
 Three things become easier:
 
-1. **Moving to `tools.unruledplay.net`** — once Aze is unblocked, the DNS change points at this repo's GitHub Pages deployment, and the tools are now on-brand from the first moment a visitor arrives.
-2. **Updating the main site's Tools section links** — the six `href` values in `unruledplay.net/src/pages/index.astro` change from `susannekroghhansen.github.io/workshop-tools/` to `tools.unruledplay.net`.
+1. **Moving to `tools.unruledplay.dk`** — once Aze is unblocked, the DNS change points at this repo's GitHub Pages deployment, and the tools are now on-brand from the first moment a visitor arrives.
+2. **Updating the main site's Tools section links** — the six `href` values in `unruledplay.net/src/pages/index.astro` change from `susannekroghhansen.github.io/workshop-tools/` to `tools.unruledplay.dk`.
 3. **Phase C, one tool at a time** — Timer first (smallest, cleanest), then Energy Check-In, Temperature Check, Parking Lot, Word Cloud, Synthesis Accelerator. Or whichever order feels right.
